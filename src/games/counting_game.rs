@@ -1,7 +1,7 @@
 use crate::{Action, Game, GameResult, State, Team};
 use crate::core::Evaluator;
 
-/// A game, where each player can add 0, 1 or 2 to a total. The player who counts to 100 first, wins.
+/// A game, where each player can add 0, 1 or 2 to a total. The player who counts to 21 first, wins.
 pub struct CountingGame;
 
 impl Game for CountingGame {
@@ -12,6 +12,10 @@ impl Game for CountingGame {
 
     fn initial_state() -> Self::State {
         CountingState { total: 0, turn: 0 }
+    }
+
+    fn starting_team() -> Self::Team {
+        CountingTeam::One
     }
 }
 
@@ -38,7 +42,7 @@ impl GameResult<CountingGame> for CountingGameResult {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum CountingTeam {
     One,
     Two,
@@ -72,14 +76,6 @@ impl State<CountingGame> for CountingState {
             CountingAction { increment: 2 },
             CountingAction { increment: 3 },
         ]
-    }
-
-    fn current_team(&self) -> CountingTeam {
-        if self.turn % 2 == 0 {
-            CountingTeam::One
-        } else {
-            CountingTeam::Two
-        }
     }
 
     fn ply(&self) -> usize {

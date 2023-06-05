@@ -47,22 +47,21 @@ impl<'a, G: Game, A: Agent<Game = G>, B: Agent<Game = G>> Contest<'a, G, A, B> {
 }
 
 impl<'a, G: Game, A: Agent<Game = G>, B: Agent<Game = G>> Iterator for &mut Contest<'a, G, A, B> {
-    type Item = (G::Action, G::State);
+    type Item = (G::State, G::Action, G::State);
 
     /// Advances the contest to the next state, calling each agent in turn
     /// to recommend an action and then yielding the action and resulting state.
     ///
     /// ## Usage:
     /// ```
-    /// for (action, state) in &mut contest {
+    /// for (old_state, action, cur_state) in &mut contest {
     ///     ...
     /// }
     /// ```
     ///
-    /// For access to the agents, use the following syntax instead:
+    /// For access to the contest, use the following syntax instead:
     /// ```
-    /// while let Some((action, state)) = (&mut contest).next() {
-    ///     // immutable access to agents
+    /// while let Some((old_state, action, cur_state)) = (&mut contest).next() {
     ///     ...
     /// }
     /// ```
@@ -71,16 +70,21 @@ impl<'a, G: Game, A: Agent<Game = G>, B: Agent<Game = G>> Iterator for &mut Cont
             return None;
         }
 
-        let action = if self.state.ply() % 2 == 0 {
+        let old_state = self.state.clone();
+
+        // increment the turn - INVARIANT IS BROKEN
+        self.state = self.state.advance_ply();
+
+        // ply 1 is the first action, so agent A starts
+        let action = if self.state.ply() % 2 == 1 {
             self.agent_a.recommend_move(&self.state)
         } else {
             self.agent_b.recommend_move(&self.state)
         };
 
+        // apply the action, finishing the turn - INVARIANT IS RESTORED
         self.state = self.state.apply_action(&action);
-        if !self.state.is_terminal() { // Do not pass on the move if the game is over
-            self.state = self.state.advance_ply();
-        }
-        Some((action, self.state.clone()))
+
+        Some((old_state, action, self.state.clone()))
     }
 }

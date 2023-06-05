@@ -27,12 +27,6 @@ impl<G: Game> Default for RandomAgent<G, ThreadRng> {
 impl<G: Game, R: Rng> Agent for RandomAgent<G, R> {
     type Game = G;
 
-    /*
-    fn team(&self) -> <<Self as Agent>::Game as Game>::Team {
-        unimplemented!("RandomAgent does not have a maximising team")
-    }
-    */
-
     fn recommend_move(
         &mut self,
         state: &<<Self as Agent>::Game as Game>::State,

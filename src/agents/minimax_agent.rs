@@ -73,15 +73,18 @@ impl<G: Game, E: Evaluator<G>> Agent for MiniMaxAgent<G, E> {
         let mut best_eval = f32::NEG_INFINITY;
         let mut best_action = None;
 
+        // By convention, the maximizing player is the starting team
+        let maximizing_player = G::starting_team() == state.current_team(); // TODO: Is this sensible?
+
         for action in state.actions() {
             let child = state.next_state(&action);
-            let eval = self.minimax(&child, self.depth - 1, f32::NEG_INFINITY, f32::INFINITY, false);
+            let eval = self.minimax(&child, self.depth - 1, f32::NEG_INFINITY, f32::INFINITY, maximizing_player);
             if eval > best_eval {
                 best_eval = eval;
                 best_action = Some(action);
             }
         }
 
-        best_action.unwrap()
+        best_action.expect("No actions available for state")
     }
 }
