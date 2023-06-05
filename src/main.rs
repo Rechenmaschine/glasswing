@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use crate::agents::random_agent::RandomAgent;
 use crate::agents::minimax_agent::MiniMaxAgent;
+use crate::agents::random_agent::RandomAgent;
 use crate::core::traits::*;
 use crate::core::Contest;
 use crate::games::counting_game::{CountingGame, CountingGameEvaluator};

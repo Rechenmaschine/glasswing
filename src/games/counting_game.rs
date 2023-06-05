@@ -1,5 +1,4 @@
-use crate::{Action, Game, GameResult, State, Team};
-use crate::core::Evaluator;
+use crate::core::traits::*;
 
 /// A game, where each player can add 0, 1 or 2 to a total. The player who counts to 21 first, wins.
 pub struct CountingGame;
@@ -85,7 +84,7 @@ impl State<CountingGame> for CountingState {
     fn apply_action(&self, action: &CountingAction) -> Self {
         Self {
             total: self.total + action.increment,
-            turn: self.turn
+            turn: self.turn,
         }
     }
 
@@ -116,22 +115,27 @@ pub struct CountingAction {
 
 impl Action<CountingGame> for CountingAction {}
 
-
 pub struct CountingGameEvaluator;
 
 impl Evaluator<CountingGame> for CountingGameEvaluator {
     fn evaluate(&self, state: &CountingState) -> f32 {
         if state.is_terminal() {
-            state.game_result().expect("State marked as terminal, but no game result available").winner().map(|t| match t {
-                CountingTeam::One => 100.0,
-                CountingTeam::Two => -100.0,
-            }).unwrap_or(0.0)
+            state
+                .game_result()
+                .expect("State marked as terminal, but no game result available")
+                .winner()
+                .map(|t| match t {
+                    CountingTeam::One => 100.0,
+                    CountingTeam::Two => -100.0,
+                })
+                .unwrap_or(0.0)
         } else {
             // the heuristic: the higher the score is, the better.
-            state.total as f32 * match state.current_team() {
-                CountingTeam::One => 1.0,
-                CountingTeam::Two => -1.0,
-            }
+            state.total as f32
+                * match state.current_team() {
+                    CountingTeam::One => 1.0,
+                    CountingTeam::Two => -1.0,
+                }
         }
     }
 }

@@ -78,7 +78,13 @@ impl<G: Game, E: Evaluator<G>> Agent for MiniMaxAgent<G, E> {
 
         for action in state.actions() {
             let child = state.next_state(&action);
-            let eval = self.minimax(&child, self.depth - 1, f32::NEG_INFINITY, f32::INFINITY, maximizing_player);
+            let eval = self.minimax(
+                &child,
+                self.depth - 1,
+                f32::NEG_INFINITY,
+                f32::INFINITY,
+                maximizing_player,
+            );
             if eval > best_eval {
                 best_eval = eval;
                 best_action = Some(action);

@@ -61,7 +61,7 @@ pub trait GameResult<G: Game>: Clone + Debug {
 /// Certain actions, such as incrementing the ply or applying an action, are only allowed in certain states.
 /// To avoid invariants, the user should refrain from calling functions in the "await" state, by calling [Self::next_state],
 /// which increments the ply and applies the action.
-pub trait State<G: Game<State=Self>>: Clone + Debug {
+pub trait State<G: Game<State = Self>>: Clone + Debug {
     /// Returns a vector of all possible actions that can be taken from this state
     fn actions(&self) -> Vec<G::Action>;
 
@@ -73,7 +73,7 @@ pub trait State<G: Game<State=Self>>: Clone + Debug {
     /// Returns the team whose turn it is to play in the current state.
     ///
     /// This implementation should by consistent with [Team::in_ply]
-    fn current_team(&self) -> G::Team{
+    fn current_team(&self) -> G::Team {
         Team::in_ply(self.ply())
     }
 
@@ -103,7 +103,7 @@ pub trait State<G: Game<State=Self>>: Clone + Debug {
     fn game_result(&self) -> Option<G::GameResult>;
 }
 
-pub trait Team<G: Game<Team=Self>>: Copy + Clone + Debug + Eq + PartialEq {
+pub trait Team<G: Game<Team = Self>>: Copy + Clone + Debug + Eq + PartialEq {
     /// In the total order of teams, return the team after this one
     fn next(&self) -> Self;
 
@@ -122,4 +122,4 @@ pub trait Team<G: Game<Team=Self>>: Copy + Clone + Debug + Eq + PartialEq {
     }
 }
 
-pub trait Action<G: Game<Action=Self>>: Clone + Debug {}
+pub trait Action<G: Game<Action = Self>>: Clone + Debug {}
