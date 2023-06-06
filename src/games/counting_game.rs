@@ -1,6 +1,8 @@
 use crate::core::traits::*;
+use serde::{Deserialize, Serialize};
 
 /// A game, where each player can add 0, 1 or 2 to a total. The player who counts to 21 first, wins.
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CountingGame;
 
 impl Game for CountingGame {
@@ -19,7 +21,7 @@ impl Game for CountingGame {
 }
 
 // CountingGameResult
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum CountingGameResult {
     Winner(CountingTeam),
     Draw,
@@ -41,7 +43,7 @@ impl GameResult<CountingGame> for CountingGameResult {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CountingTeam {
     One,
     Two,
@@ -56,7 +58,7 @@ impl Team<CountingGame> for CountingTeam {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CountingState {
     total: u8,
     turn: usize,
@@ -108,7 +110,7 @@ impl State<CountingGame> for CountingState {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct CountingAction {
     pub increment: u8,
 }
@@ -118,6 +120,10 @@ impl Action<CountingGame> for CountingAction {}
 pub struct CountingGameEvaluator;
 
 impl Evaluator<CountingGame> for CountingGameEvaluator {
+    fn identifier() -> String {
+        String::from("counting_game_evaluator")
+    }
+
     fn evaluate(&self, state: &CountingState) -> f32 {
         if state.is_terminal() {
             state

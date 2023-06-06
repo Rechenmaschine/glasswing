@@ -1,7 +1,13 @@
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
 pub trait Agent {
     type Game: Game;
+
+    fn identifier() -> String {
+        String::from("agent")
+    }
 
     /// Returns the recommended move for the given state
     fn recommend_move(
@@ -11,6 +17,9 @@ pub trait Agent {
 }
 
 pub trait Evaluator<G: Game> {
+    fn identifier() -> String {
+        String::from("evaluator")
+    }
     /// Evaluates the given state for a two-player game.
     ///
     /// The magnitude of the score indicates how likely a player is to win.
@@ -21,7 +30,7 @@ pub trait Evaluator<G: Game> {
 }
 
 /// Trait for a game, that links together all necessary types for a game
-pub trait Game: Sized {
+pub trait Game: Sized + Serialize + DeserializeOwned {
     type State: State<Self>;
     type Action: Action<Self>;
     type Team: Team<Self>;
@@ -37,7 +46,7 @@ pub trait Game: Sized {
     fn starting_team() -> Self::Team;
 }
 
-pub trait GameResult<G: Game>: Clone + Debug {
+pub trait GameResult<G: Game>: Clone + Debug + Serialize + DeserializeOwned {
     /// The winner of the game
     fn winner(&self) -> Option<G::Team>;
 
@@ -61,7 +70,9 @@ pub trait GameResult<G: Game>: Clone + Debug {
 /// Certain actions, such as incrementing the ply or applying an action, are only allowed in certain states.
 /// To avoid invariants, the user should refrain from calling functions in the "await" state, by calling [Self::next_state],
 /// which increments the ply and applies the action.
-pub trait State<G: Game<State = Self>>: Clone + Debug {
+pub trait State<G: Game<State = Self>>:
+    Clone + Debug + Serialize + for<'a> Deserialize<'a>
+{
     /// Returns a vector of all possible actions that can be taken from this state
     fn actions(&self) -> Vec<G::Action>;
 
@@ -103,7 +114,9 @@ pub trait State<G: Game<State = Self>>: Clone + Debug {
     fn game_result(&self) -> Option<G::GameResult>;
 }
 
-pub trait Team<G: Game<Team = Self>>: Copy + Clone + Debug + Eq + PartialEq {
+pub trait Team<G: Game<Team = Self>>:
+    Copy + Clone + Debug + Eq + PartialEq + Serialize + DeserializeOwned
+{
     /// In the total order of teams, return the team after this one
     fn next(&self) -> Self;
 
@@ -122,4 +135,4 @@ pub trait Team<G: Game<Team = Self>>: Copy + Clone + Debug + Eq + PartialEq {
     }
 }
 
-pub trait Action<G: Game<Action = Self>>: Clone + Debug {}
+pub trait Action<G: Game<Action = Self>>: Clone + Debug + Serialize + DeserializeOwned {}
