@@ -1,5 +1,4 @@
 use crate::core::Game;
-use std::io::Write;
 use std::ops::Index;
 use std::time::Duration;
 
@@ -51,15 +50,15 @@ impl<G: Game> GameHistory<G> {
     }
 
     #[cfg(feature = "serde_support")]
-    pub fn save_to(&self, path: &str) -> std::io::Result<()> {
+    pub fn save_to<P: AsRef<std::path::Path>>(&self, path: P) -> std::io::Result<()> {
         let mut file = std::fs::File::create(path)?;
         let json = serde_json::to_string(self)?;
-        file.write_all(json.as_bytes())?;
+        std::io::Write::write_all(&mut file, json.as_bytes())?;
         Ok(())
     }
 
     #[cfg(feature = "serde_support")]
-    pub fn load_from(path: &str) -> std::io::Result<Self> {
+    pub fn load_from<P: AsRef<std::path::Path>>(path: P) -> std::io::Result<Self> {
         let file = std::fs::File::open(path)?;
         let history = serde_json::from_reader(file)?;
         Ok(history)
@@ -84,7 +83,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde_support")]
     fn test_serde() {
-            let mut agent1: MonkeAgent<CountingGame> = MonkeAgent::default();
+        let mut agent1: MonkeAgent<CountingGame> = MonkeAgent::default();
         let mut agent2: MonkeAgent<CountingGame> = MonkeAgent::default();
 
         let mut history: GameHistory<CountingGame> = GameHistory::new(
