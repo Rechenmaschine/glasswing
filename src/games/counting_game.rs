@@ -120,7 +120,6 @@ impl Action<CountingGame> for CountingAction {}
 pub struct CountingGameEvaluator;
 
 impl Evaluator<CountingGame> for CountingGameEvaluator {
-
     fn evaluate(&self, state: &CountingState) -> f32 {
         if state.is_terminal() {
             state

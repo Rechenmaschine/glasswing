@@ -2,14 +2,14 @@ use crate::core::move_history::GameHistory;
 use crate::core::traits::*;
 
 /// A match between two agents in a game.
-pub struct ManagedContest<'a, G: Game, A: Agent<Game=G>, B: Agent<Game=G>> {
+pub struct ManagedContest<'a, G: Game, A: Agent<Game = G>, B: Agent<Game = G>> {
     state: G::State,
     history: GameHistory<G>,
     agent_a: &'a mut A,
     agent_b: &'a mut B,
 }
 
-impl<'a, G: Game, A: Agent<Game=G>, B: Agent<Game=G>> ManagedContest<'a, G, A, B> {
+impl<'a, G: Game, A: Agent<Game = G>, B: Agent<Game = G>> ManagedContest<'a, G, A, B> {
     /// Creates a new ManagedContest with the initial state and agents.
     /// Note that agent A always starts the game.
     pub fn new(
@@ -23,7 +23,7 @@ impl<'a, G: Game, A: Agent<Game=G>, B: Agent<Game=G>> ManagedContest<'a, G, A, B
             state: initial_state.clone(),
             history: GameHistory::new(agent_a_desc, agent_b_desc, initial_state),
             agent_a,
-            agent_b
+            agent_b,
         }
     }
 
@@ -58,8 +58,8 @@ impl<'a, G: Game, A: Agent<Game=G>, B: Agent<Game=G>> ManagedContest<'a, G, A, B
     }
 }
 
-impl<'a, G: Game, A: Agent<Game=G>, B: Agent<Game=G>> Iterator
-for &mut ManagedContest<'a, G, A, B>
+impl<'a, G: Game, A: Agent<Game = G>, B: Agent<Game = G>> Iterator
+    for &mut ManagedContest<'a, G, A, B>
 {
     type Item = (G::State, G::Action, G::State);
 

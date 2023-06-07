@@ -1,9 +1,13 @@
 use crate::core::Game;
-use serde::{Deserialize, Serialize};
+use std::io::Write;
 use std::ops::Index;
 use std::time::Duration;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg(feature = "serde_support")]
+pub use serde::{Deserialize, Serialize};
+
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug)]
 pub struct Turn<G: Game> {
     action: G::Action,
     state: G::State,
@@ -11,8 +15,12 @@ pub struct Turn<G: Game> {
 }
 
 /// The execution history of a game played between two agents.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(bound = "for<'de2> G: Deserialize<'de2>")]
+#[cfg_attr(
+    feature = "serde_support",
+    derive(Serialize, Deserialize),
+    serde(bound = "for<'de2> G: Deserialize<'de2>")
+)]
+#[derive(Clone, Debug)]
 pub struct GameHistory<G: Game> {
     agent_a_id: String,
     agent_b_id: String,
@@ -41,6 +49,21 @@ impl<G: Game> GameHistory<G> {
             agent_time,
         });
     }
+
+    #[cfg(feature = "serde_support")]
+    pub fn save_to(&self, path: &str) -> std::io::Result<()> {
+        let mut file = std::fs::File::create(path)?;
+        let json = serde_json::to_string(self)?;
+        file.write_all(json.as_bytes())?;
+        Ok(())
+    }
+
+    #[cfg(feature = "serde_support")]
+    pub fn load_from(path: &str) -> std::io::Result<Self> {
+        let file = std::fs::File::open(path)?;
+        let history = serde_json::from_reader(file)?;
+        Ok(history)
+    }
 }
 
 impl<G: Game> Index<usize> for GameHistory<G> {
@@ -59,8 +82,9 @@ mod tests {
     use crate::games::counting_game::CountingGame;
 
     #[test]
+    #[cfg(feature = "serde_support")]
     fn test_serde() {
-        let mut agent1: MonkeAgent<CountingGame> = MonkeAgent::default();
+            let mut agent1: MonkeAgent<CountingGame> = MonkeAgent::default();
         let mut agent2: MonkeAgent<CountingGame> = MonkeAgent::default();
 
         let mut history: GameHistory<CountingGame> = GameHistory::new(
@@ -76,5 +100,13 @@ mod tests {
 
         let ser = serde_json::to_string(&history).expect("Failed to serialize");
         serde_json::from_str::<GameHistory<CountingGame>>(&ser).expect("Failed to deserialize");
+
+        history
+            .save_to("test.json")
+            .expect("Failed to save history");
+
+        GameHistory::<CountingGame>::load_from("test.json").expect("Failed to load history");
+
+        std::fs::remove_file("test.json").expect("Failed to delete test.json");
     }
 }
