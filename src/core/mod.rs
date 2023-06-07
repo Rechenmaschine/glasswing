@@ -1,7 +1,8 @@
 pub mod contest;
-pub mod managed_contest;
-pub mod move_history;
+pub mod game_history;
 pub mod traits;
+pub mod player;
 
-pub use contest::*;
+
 pub use traits::*;
+pub use contest::*;

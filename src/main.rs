@@ -2,8 +2,8 @@
 
 use crate::agents::minimax_agent::MiniMaxAgent;
 use crate::agents::random_agent::RandomAgent;
-use crate::core::traits::*;
-use crate::core::Contest;
+use crate::core::{ContestBuilder, Game};
+use crate::core::player::PlayerBuilder;
 use crate::games::counting_game::{CountingGame, CountingGameEvaluator};
 
 mod agents;
@@ -11,20 +11,30 @@ mod core;
 mod games;
 
 fn main() {
-    let mut agent1: RandomAgent<CountingGame, _> = RandomAgent::default();
-    let mut agent2: MiniMaxAgent<CountingGame, CountingGameEvaluator> =
-        MiniMaxAgent::new(10, CountingGameEvaluator);
-    //let mut agent2: RandomAgent<CountingGame, _> = RandomAgent::default();
 
-    let mut contest = Contest::new(CountingGame::initial_state(), &mut agent1, &mut agent2);
-    while let Some((old, action, curr)) = (&mut contest).next() {
-        println!(
-            "{:?} -> player {:?} increments by {} -> {:?}",
-            old,
-            curr.current_team(),
-            action.increment,
-            curr
-        );
-    }
-    println!("{:?}", contest.game_result());
+    let agent1: RandomAgent<CountingGame, _> = RandomAgent::default();
+    let agent2: MiniMaxAgent<CountingGame, CountingGameEvaluator> =
+        MiniMaxAgent::new(10, CountingGameEvaluator);
+
+    let mut contest = ContestBuilder::new()
+        .initial_state(CountingGame::initial_state())
+        .player_starts(
+            PlayerBuilder::new()
+                .name("Random")
+                .agent(agent1)
+                .build()
+                .unwrap())
+        .plays_aginst(
+            PlayerBuilder::new()
+                .name("MiniMax")
+                .agent(agent2)
+                .build()
+                .unwrap())
+        .build()
+        .unwrap();
+
+    contest.play();
+    contest.history()
+        .save_to("history.json")
+        .expect("Failed to save history to file")
 }

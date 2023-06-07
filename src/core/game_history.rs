@@ -1,6 +1,6 @@
-use crate::core::Game;
 use std::ops::Index;
 use std::time::Duration;
+use crate::core::Game;
 
 #[cfg(feature = "serde_support")]
 pub use serde::{Deserialize, Serialize};
@@ -15,9 +15,9 @@ pub struct Turn<G: Game> {
 
 /// The execution history of a game played between two agents.
 #[cfg_attr(
-    feature = "serde_support",
-    derive(Serialize, Deserialize),
-    serde(bound = "for<'de2> G: Deserialize<'de2>")
+feature = "serde_support",
+derive(Serialize, Deserialize),
+serde(bound = "for<'de2> G: Deserialize<'de2>")
 )]
 #[derive(Clone, Debug)]
 pub struct GameHistory<G: Game> {
@@ -77,22 +77,29 @@ impl<G: Game> Index<usize> for GameHistory<G> {
 mod tests {
     use super::*;
     use crate::agents::monke_agent::MonkeAgent;
-    use crate::core::Contest;
+    use crate::{ContestBuilder, PlayerBuilder};
     use crate::games::counting_game::CountingGame;
 
     #[test]
     #[cfg(feature = "serde_support")]
     fn test_serde() {
-        let mut agent1: MonkeAgent<CountingGame> = MonkeAgent::default();
-        let mut agent2: MonkeAgent<CountingGame> = MonkeAgent::default();
+        let agent1: MonkeAgent<CountingGame> = MonkeAgent::default();
+        let agent2: MonkeAgent<CountingGame> = MonkeAgent::default();
 
         let mut history: GameHistory<CountingGame> = GameHistory::new(
-            "agent_1".to_string(),
-            "agent_2".to_string(),
+            "player_1".to_string(),
+            "player_2".to_string(),
             CountingGame::initial_state(),
         );
 
-        let mut contest = Contest::new(CountingGame::initial_state(), &mut agent1, &mut agent2);
+        let mut contest = ContestBuilder::new()
+            .initial_state(CountingGame::initial_state())
+            .player_starts(PlayerBuilder::new().agent(agent1).build().unwrap())
+            .plays_aginst(PlayerBuilder::new().agent(agent2).build().unwrap())
+            .build()
+            .unwrap();
+
+
         while let Some((_old, action, curr)) = (&mut contest).next() {
             history.add_turn(action, curr, Duration::from_secs(0));
         }
