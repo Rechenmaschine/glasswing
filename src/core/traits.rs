@@ -5,10 +5,6 @@ use std::fmt::Debug;
 pub trait Agent {
     type Game: Game;
 
-    fn identifier() -> String {
-        String::from("agent")
-    }
-
     /// Returns the recommended move for the given state
     fn recommend_move(
         &mut self,
@@ -17,9 +13,6 @@ pub trait Agent {
 }
 
 pub trait Evaluator<G: Game> {
-    fn identifier() -> String {
-        String::from("evaluator")
-    }
     /// Evaluates the given state for a two-player game.
     ///
     /// The magnitude of the score indicates how likely a player is to win.

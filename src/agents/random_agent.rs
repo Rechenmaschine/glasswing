@@ -27,10 +27,6 @@ impl<G: Game> Default for RandomAgent<G, ThreadRng> {
 impl<G: Game, R: Rng> Agent for RandomAgent<G, R> {
     type Game = G;
 
-    fn identifier() -> String {
-        String::from("Generic RandomAgent")
-    }
-
     fn recommend_move(
         &mut self,
         state: &<<Self as Agent>::Game as Game>::State,

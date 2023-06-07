@@ -23,10 +23,6 @@ impl<G: Game> Default for MonkeAgent<G> {
 impl<G: Game> Agent for MonkeAgent<G> {
     type Game = G;
 
-    fn identifier() -> String {
-        String::from("MonkeAgent")
-    }
-
     fn recommend_move(
         &mut self,
         state: &<<Self as Agent>::Game as Game>::State,

@@ -66,10 +66,6 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
 impl<G: Game, E: Evaluator<G>> Agent for MiniMaxAgent<G, E> {
     type Game = G;
 
-    fn identifier() -> String {
-        format!("Generic MiniMaxAgent<{}>", E::identifier())
-    }
-
     fn recommend_move(
         &mut self,
         state: &<<Self as Agent>::Game as Game>::State,

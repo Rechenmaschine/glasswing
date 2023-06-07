@@ -12,27 +12,18 @@ pub struct ManagedContest<'a, G: Game, A: Agent<Game=G>, B: Agent<Game=G>> {
 impl<'a, G: Game, A: Agent<Game=G>, B: Agent<Game=G>> ManagedContest<'a, G, A, B> {
     /// Creates a new ManagedContest with the initial state and agents.
     /// Note that agent A always starts the game.
-    pub fn new(initial_state: G::State, agent_a: &'a mut A, agent_b: &'a mut B) -> Self {
-        ManagedContest {
-            state: initial_state.clone(),
-            history: GameHistory::new(B::identifier(), A::identifier(), initial_state),
-            agent_a,
-            agent_b,
-        }
-    }
-
-    pub fn new_with_ids(
+    pub fn new(
         initial_state: G::State,
         agent_a: &'a mut A,
         agent_b: &'a mut B,
-        agent_a_identifier: String,
-        agent_b_identifier: String,
+        agent_b_desc: String,
+        agent_a_desc: String,
     ) -> Self {
         ManagedContest {
             state: initial_state.clone(),
-            history: GameHistory::new(agent_b_identifier, agent_a_identifier, initial_state),
+            history: GameHistory::new(agent_a_desc, agent_b_desc, initial_state),
             agent_a,
-            agent_b,
+            agent_b
         }
     }
 
@@ -134,7 +125,10 @@ mod tests {
         let mut contest = ManagedContest::new(
             CountingGame::initial_state(),
             &mut agent1,
-            &mut agent2);
+            &mut agent2,
+            "monke-1".to_string(),
+            "monke-2".to_string(),
+        );
         contest.play();
         let history = contest.history();
         assert_ne!(history.turns().len(), 0);
