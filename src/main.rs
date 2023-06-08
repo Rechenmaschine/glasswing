@@ -11,7 +11,6 @@ mod core;
 mod games;
 
 fn main() {
-
     let agent1: RandomAgent<CountingGame, _> = RandomAgent::default();
     let agent2: MiniMaxAgent<CountingGame, CountingGameEvaluator> =
         MiniMaxAgent::new(10, CountingGameEvaluator);
@@ -36,5 +35,5 @@ fn main() {
     contest.play();
     contest.history()
         .save_to("history.json")
-        .expect("Failed to save history to file")
+        .expect("Failed to save history to file");
 }

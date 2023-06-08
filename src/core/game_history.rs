@@ -76,15 +76,15 @@ impl<G: Game> Index<usize> for GameHistory<G> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::agents::monke_agent::MonkeAgent;
+    use crate::agents::simple_agent::SimpleAgent;
     use crate::{ContestBuilder, PlayerBuilder};
     use crate::games::counting_game::CountingGame;
 
     #[test]
     #[cfg(feature = "serde_support")]
     fn test_serde() {
-        let agent1: MonkeAgent<CountingGame> = MonkeAgent::default();
-        let agent2: MonkeAgent<CountingGame> = MonkeAgent::default();
+        let agent1: SimpleAgent<CountingGame> = SimpleAgent::default();
+        let agent2: SimpleAgent<CountingGame> = SimpleAgent::default();
 
         let mut history: GameHistory<CountingGame> = GameHistory::new(
             "player_1".to_string(),

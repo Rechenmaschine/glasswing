@@ -2,25 +2,25 @@ use crate::core::traits::*;
 use std::marker::PhantomData;
 
 /// The simplest agent possible, which always recommends the first available action.
-pub struct MonkeAgent<G: Game> {
+pub struct SimpleAgent<G: Game> {
     _marker: PhantomData<G>,
 }
 
-impl<G: Game> MonkeAgent<G> {
+impl<G: Game> SimpleAgent<G> {
     pub fn new() -> Self {
-        MonkeAgent {
+        SimpleAgent {
             _marker: PhantomData,
         }
     }
 }
 
-impl<G: Game> Default for MonkeAgent<G> {
+impl<G: Game> Default for SimpleAgent<G> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<G: Game> Agent for MonkeAgent<G> {
+impl<G: Game> Agent for SimpleAgent<G> {
     type Game = G;
 
     fn recommend_move(

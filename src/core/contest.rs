@@ -154,13 +154,13 @@ impl<G: Game, A: Agent<Game=G>, B: Agent<Game=G>> ContestBuilder<G, A, B> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::agents::monke_agent::MonkeAgent;
+    use crate::agents::simple_agent::SimpleAgent;
     use crate::games::counting_game::*;
 
     #[test]
     fn test_history() {
-        let agent1: MonkeAgent<CountingGame> = MonkeAgent::default();
-        let agent2: MonkeAgent<CountingGame> = MonkeAgent::default();
+        let agent1: SimpleAgent<CountingGame> = SimpleAgent::default();
+        let agent2: SimpleAgent<CountingGame> = SimpleAgent::default();
 
         let mut contest = ContestBuilder::new()
             .initial_state(CountingGame::initial_state())
