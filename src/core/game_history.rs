@@ -1,6 +1,6 @@
+use crate::core::Game;
 use std::ops::Index;
 use std::time::Duration;
-use crate::core::Game;
 
 #[cfg(feature = "serde_support")]
 pub use serde::{Deserialize, Serialize};
@@ -15,9 +15,9 @@ pub struct Turn<G: Game> {
 
 /// The execution history of a game played between two agents.
 #[cfg_attr(
-feature = "serde_support",
-derive(Serialize, Deserialize),
-serde(bound = "for<'de2> G: Deserialize<'de2>")
+    feature = "serde_support",
+    derive(Serialize, Deserialize),
+    serde(bound = "for<'de2> G: Deserialize<'de2>")
 )]
 #[derive(Clone, Debug)]
 pub struct GameHistory<G: Game> {
@@ -77,8 +77,8 @@ impl<G: Game> Index<usize> for GameHistory<G> {
 mod tests {
     use super::*;
     use crate::agents::simple_agent::SimpleAgent;
-    use crate::{ContestBuilder, PlayerBuilder};
     use crate::games::counting_game::CountingGame;
+    use crate::{ContestBuilder, PlayerBuilder};
 
     #[test]
     #[cfg(feature = "serde_support")]
@@ -98,7 +98,6 @@ mod tests {
             .plays_aginst(PlayerBuilder::new().agent(agent2).build().unwrap())
             .build()
             .unwrap();
-
 
         while let Some((_old, action, curr)) = (&mut contest).next() {
             history.add_turn(action, curr, Duration::from_secs(0));

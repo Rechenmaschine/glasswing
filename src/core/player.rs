@@ -1,28 +1,26 @@
+use crate::core::bridge::Bridge;
+use crate::core::{Agent, BuilderError, Game};
 use std::any::type_name;
 use std::time::Duration;
-use crate::core::Agent;
-use crate::Game;
 
-pub struct Player<A: Agent> {
-    agent: A,
-    description: &'static str,
+pub struct Player<A: Agent, Br: Bridge<A>> {
+    agent: Br,
+    name: &'static str,
     time_limit: Duration,
+    _marker: std::marker::PhantomData<A>,
 }
 
-#[derive(Debug)]
-pub enum BuilderError {
-    MissingAttribute(&'static str)
-}
-
-impl<A: Agent> Player<A> {
-    pub fn recommend_move(&mut self, state: &<A::Game as Game>::State) -> <A::Game as Game>::Action {
-        self.agent.recommend_move_with_time(state, self.time_limit)
+impl<A: Agent, Br: Bridge<A>> Player<A, Br> {
+    pub fn recommend_move(
+        &mut self,
+        state: &<A::Game as Game>::State,
+    ) -> <A::Game as Game>::Action {
+        self.agent.recommend_action(state, self.time_limit)
     }
 
-    pub fn description(&self) -> &str {
-        &self.description
+    pub fn name(&self) -> &str {
+        &self.name
     }
-
 
     pub fn time_limit(&self) -> Duration {
         self.time_limit
@@ -30,32 +28,33 @@ impl<A: Agent> Player<A> {
 }
 
 /// implement builder pattern for Player
-pub struct PlayerBuilder<A: Agent> {
-    agent: Option<A>,
-    description: Option<&'static str>,
+pub struct PlayerBuilder<A: Agent, Br: Bridge<A>> {
+    agent: Option<Br>,
+    name: Option<&'static str>,
     time_limit: Option<Duration>,
+    _marker: std::marker::PhantomData<A>,
 }
 
-impl<A: Agent> PlayerBuilder<A> {
-
+impl<A: Agent, Br: Bridge<A>> PlayerBuilder<A, Br> {
     /// Create a new PlayerBuilder
     pub fn new() -> Self {
         PlayerBuilder {
             agent: None,
-            description: None,
+            name: None,
             time_limit: None,
+            _marker: Default::default(),
         }
     }
 
     /// Set the agent used for move recommendation in the player
-    pub fn agent(mut self, agent: A) -> Self {
+    pub fn agent(mut self, agent: Br) -> Self {
         self.agent = Some(agent);
         self
     }
 
     /// Set the name of the player. If not set, the name will be the type name of the agent
     pub fn name(mut self, name: &'static str) -> Self {
-        self.description = Some(name);
+        self.name = Some(name);
         self
     }
 
@@ -67,12 +66,13 @@ impl<A: Agent> PlayerBuilder<A> {
     }
 
     /// Build the player. Returns an error if a required attribute is missing.
-    pub fn build(self) -> Result<Player<A>, BuilderError> {
+    pub fn build(self) -> Result<Player<A, Br>, BuilderError> {
         if let Some(agent) = self.agent {
             Ok(Player {
                 agent,
-                description: self.description.unwrap_or_else(|| type_name::<A>()),
+                name: self.name.unwrap_or_else(|| type_name::<Br>()),
                 time_limit: self.time_limit.unwrap_or(Duration::MAX),
+                _marker: Default::default(),
             })
         } else {
             Err(BuilderError::MissingAttribute("Agent not set"))

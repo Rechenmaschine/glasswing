@@ -25,12 +25,11 @@ pub trait Agent {
         state: &<<Self as Agent>::Game as Game>::State,
     ) -> <<Self as Agent>::Game as Game>::Action;
 
-    // TODO: Remove this function
     fn recommend_move_with_time(
         &mut self,
         state: &<<Self as Agent>::Game as Game>::State,
-        _time: Duration,
-    ) -> <<Self as Agent>::Game as Game>::Action{
+        _: Duration,
+    ) -> <<Self as Agent>::Game as Game>::Action {
         self.recommend_move(state)
     }
 }

@@ -1,29 +1,45 @@
-use std::time::Instant;
-use crate::core::traits::*;
-use crate::core::player::*;
+use crate::core::bridge::Bridge;
 use crate::core::game_history::*;
+use crate::core::player::*;
+use crate::core::traits::*;
+use crate::core::BuilderError;
+use std::time::Instant;
 
 /// **API note:** Agents are moved into the contest, as they should not be reused.
-pub struct Contest<G: Game, A: Agent<Game=G>, B: Agent<Game=G>> {
+pub struct Contest<G, A, B, BrA, BrB>
+where
+    G: Game,
+    A: Agent<Game = G>,
+    B: Agent<Game = G>,
+    BrA: Bridge<A>,
+    BrB: Bridge<B>,
+{
     state: G::State,
     history: GameHistory<G>,
-    player_a: Player<A>,
-    player_b: Player<B>,
+    player_a: Player<A, BrA>,
+    player_b: Player<B, BrB>,
 }
 
-impl<G: Game, A: Agent<Game=G>, B: Agent<Game=G>> Contest<G, A, B> {
+impl<G, A, B, BrA, BrB> Contest<G, A, B, BrA, BrB>
+where
+    G: Game,
+    A: Agent<Game = G>,
+    B: Agent<Game = G>,
+    BrA: Bridge<A>,
+    BrB: Bridge<B>,
+{
     /// Returns the result of the game or None if the game is not over.
     pub fn game_result(&self) -> Option<G::GameResult> {
         self.state.game_result()
     }
 
     /// Returns a reference to Agent A.
-    pub fn agent_a(&self) -> &Player<A> {
+    pub fn agent_a(&self) -> &Player<A, BrA> {
         &self.player_a
     }
 
     /// Returns a reference to Agent B.
-    pub fn agent_b(&self) -> &Player<B> {
+    pub fn agent_b(&self) -> &Player<B, BrB> {
         &self.player_b
     }
 
@@ -43,7 +59,13 @@ impl<G: Game, A: Agent<Game=G>, B: Agent<Game=G>> Contest<G, A, B> {
     }
 }
 
-impl<G: Game, A: Agent<Game=G>, B: Agent<Game=G>> Iterator for &mut Contest<G, A, B>
+impl<G, A, B, BrA, BrB> Iterator for &mut Contest<G, A, B, BrA, BrB>
+where
+    G: Game,
+    A: Agent<Game = G>,
+    B: Agent<Game = G>,
+    BrA: Bridge<A>,
+    BrB: Bridge<B>,
 {
     type Item = (G::State, G::Action, G::State);
 
@@ -95,13 +117,27 @@ impl<G: Game, A: Agent<Game=G>, B: Agent<Game=G>> Iterator for &mut Contest<G, A
     }
 }
 
-pub struct ContestBuilder<G: Game, A: Agent<Game=G>, B: Agent<Game=G>> {
+pub struct ContestBuilder<G, A, B, BrA, BrB>
+where
+    G: Game,
+    A: Agent<Game = G>,
+    B: Agent<Game = G>,
+    BrA: Bridge<A>,
+    BrB: Bridge<B>,
+{
     state: Option<G::State>,
-    player_a: Option<Player<A>>,
-    player_b: Option<Player<B>>,
+    player_a: Option<Player<A, BrA>>,
+    player_b: Option<Player<B, BrB>>,
 }
 
-impl<G: Game, A: Agent<Game=G>, B: Agent<Game=G>> ContestBuilder<G, A, B> {
+impl<G, A, B, BrA, BrB> ContestBuilder<G, A, B, BrA, BrB>
+where
+    G: Game,
+    A: Agent<Game = G>,
+    B: Agent<Game = G>,
+    BrA: Bridge<A>,
+    BrB: Bridge<B>,
+{
     /// Create a new contest builder
     pub fn new() -> Self {
         Self {
@@ -117,19 +153,19 @@ impl<G: Game, A: Agent<Game=G>, B: Agent<Game=G>> ContestBuilder<G, A, B> {
     }
 
     /// Set the player that will start the game.
-    pub fn player_starts(mut self, player: Player<A>) -> Self {
+    pub fn player_starts(mut self, player: Player<A, BrA>) -> Self {
         self.player_a = Some(player);
         self
     }
 
     /// Set the player that will play second.
-    pub fn plays_aginst(mut self, player: Player<B>) -> Self {
+    pub fn plays_aginst(mut self, player: Player<B, BrB>) -> Self {
         self.player_b = Some(player);
         self
     }
 
     /// Build the contest, returning an error if any required attributes are missing.
-    pub fn build(mut self) -> Result<Contest<G, A, B>, BuilderError> {
+    pub fn build(mut self) -> Result<Contest<G, A, B, BrA, BrB>, BuilderError> {
         if self.state.is_none() {
             self.state = Some(G::initial_state());
         }
@@ -141,15 +177,16 @@ impl<G: Game, A: Agent<Game=G>, B: Agent<Game=G>> ContestBuilder<G, A, B> {
         }
         Ok(Contest {
             state: self.state.clone().unwrap(),
-            history: GameHistory::new(self.player_a.as_ref().unwrap().description().clone().to_string(),
-                                      self.player_b.as_ref().unwrap().description().clone().to_string(),
-                                      self.state.clone().unwrap()),
+            history: GameHistory::new(
+                self.player_a.as_ref().unwrap().name().clone().to_string(),
+                self.player_b.as_ref().unwrap().name().clone().to_string(),
+                self.state.clone().unwrap(),
+            ),
             player_a: self.player_a.unwrap(),
             player_b: self.player_b.unwrap(),
         })
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -169,13 +206,15 @@ mod tests {
                     .name("Monke-1")
                     .agent(agent1)
                     .build()
-                    .unwrap())
+                    .unwrap(),
+            )
             .plays_aginst(
                 PlayerBuilder::new()
                     .name("Monke-2")
                     .agent(agent2)
                     .build()
-                    .unwrap())
+                    .unwrap(),
+            )
             .build()
             .unwrap();
         contest.play();

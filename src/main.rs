@@ -2,8 +2,8 @@
 
 use crate::agents::minimax_agent::MiniMaxAgent;
 use crate::agents::random_agent::RandomAgent;
-use crate::core::{ContestBuilder, Game};
 use crate::core::player::PlayerBuilder;
+use crate::core::{ContestBuilder, Game};
 use crate::games::counting_game::{CountingGame, CountingGameEvaluator};
 
 mod agents;
@@ -19,21 +19,22 @@ fn main() {
         .initial_state(CountingGame::initial_state())
         .player_starts(
             PlayerBuilder::new()
-                .name("Random")
                 .agent(agent1)
                 .build()
-                .unwrap())
+                .unwrap(),
+        )
         .plays_aginst(
             PlayerBuilder::new()
-                .name("MiniMax")
                 .agent(agent2)
                 .build()
-                .unwrap())
+                .unwrap(),
+        )
         .build()
         .unwrap();
 
     contest.play();
-    contest.history()
+    contest
+        .history()
         .save_to("history.json")
         .expect("Failed to save history to file");
 }
