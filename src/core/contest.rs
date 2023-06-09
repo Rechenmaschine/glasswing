@@ -1,4 +1,3 @@
-use crate::core::bridge::Bridge;
 use crate::core::game_history::*;
 use crate::core::player::*;
 use crate::core::traits::*;

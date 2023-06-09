@@ -1,4 +1,3 @@
-pub mod bridge;
 pub mod contest;
 pub mod game_history;
 pub mod player;

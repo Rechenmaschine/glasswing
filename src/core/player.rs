@@ -1,5 +1,4 @@
-use crate::core::bridge::Bridge;
-use crate::core::{Agent, BuilderError, Error, Game};
+use crate::core::{Agent, Bridge, BuilderError, Error, Game};
 use std::any::type_name;
 use std::time::Duration;
 
