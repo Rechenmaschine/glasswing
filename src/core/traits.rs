@@ -1,3 +1,4 @@
+use crate::core::Error;
 use std::fmt::Debug;
 use std::time::Duration;
 
@@ -24,7 +25,7 @@ pub trait Agent {
         &mut self,
         state: &<<Self as Agent>::Game as Game>::State,
         time_limit: Duration,
-    ) -> <<Self as Agent>::Game as Game>::Action;
+    ) -> Result<<<Self as Agent>::Game as Game>::Action, Error>;
 }
 
 pub trait Evaluator<G: Game> {
@@ -34,7 +35,7 @@ pub trait Evaluator<G: Game> {
     /// - A positive score indicates that the first player is winning
     /// - A negative score indicates that the second player is winning
     /// - A score of 0 indicates that the game is likely a draw
-    fn evaluate(&self, state: &G::State) -> f32;
+    fn evaluate(&self, state: &G::State) -> Result<f32, Error>;
 }
 
 /// Trait for a game, that links together all necessary types for a game

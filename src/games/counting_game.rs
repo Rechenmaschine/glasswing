@@ -1,4 +1,5 @@
 use crate::core::traits::*;
+use crate::core::Error;
 use serde::{Deserialize, Serialize};
 
 /// A game, where each player can add 0, 1 or 2 to a total. The player who counts to 21 first, wins.
@@ -120,7 +121,7 @@ impl Action<CountingGame> for CountingAction {}
 pub struct CountingGameEvaluator;
 
 impl Evaluator<CountingGame> for CountingGameEvaluator {
-    fn evaluate(&self, state: &CountingState) -> f32 {
+    fn evaluate(&self, state: &CountingState) -> Result<f32, Error> {
         if state.is_terminal() {
             state
                 .game_result()
@@ -130,14 +131,15 @@ impl Evaluator<CountingGame> for CountingGameEvaluator {
                     CountingTeam::One => 100.0,
                     CountingTeam::Two => -100.0,
                 })
-                .unwrap_or(0.0)
+                .or_else(|| Some(0.0))
+                .ok_or(Error::EvaluationError)
         } else {
             // the heuristic: the higher the score is, the better.
-            state.total as f32
+            Ok(state.total as f32
                 * match state.current_team() {
                     CountingTeam::One => 1.0,
                     CountingTeam::Two => -1.0,
-                }
+                })
         }
     }
 }

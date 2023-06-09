@@ -1,5 +1,5 @@
-use crate::core::Agent;
 use crate::core::Game;
+use crate::core::{Agent, Error};
 use std::time::Duration;
 
 /// A bridge is an adapter between the contest and the agent.
@@ -12,7 +12,7 @@ pub trait Bridge<A: Agent> {
         &mut self,
         state: &<A::Game as Game>::State,
         time_limit: Duration,
-    ) -> <A::Game as Game>::Action;
+    ) -> Result<<A::Game as Game>::Action, Error>;
 }
 
 // This is a convenience implementation of the Bridge trait for agents, such that
@@ -22,7 +22,7 @@ impl<A: Agent> Bridge<A> for A {
         &mut self,
         state: &<A::Game as Game>::State,
         time_limit: Duration,
-    ) -> <A::Game as Game>::Action {
+    ) -> Result<<A::Game as Game>::Action, Error> {
         self.recommend_action(state, time_limit)
     }
 }

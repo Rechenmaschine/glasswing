@@ -1,5 +1,5 @@
 use crate::core::bridge::Bridge;
-use crate::core::{Agent, BuilderError, Game};
+use crate::core::{Agent, BuilderError, Error, Game};
 use std::any::type_name;
 use std::time::Duration;
 
@@ -14,7 +14,7 @@ impl<A: Agent, Br: Bridge<A>> Player<A, Br> {
     pub fn recommend_action(
         &mut self,
         state: &<A::Game as Game>::State,
-    ) -> <A::Game as Game>::Action {
+    ) -> Result<<A::Game as Game>::Action, Error> {
         self.agent.recommend_action(state, self.time_limit)
     }
 

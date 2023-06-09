@@ -22,7 +22,7 @@ fn main() {
         .build()
         .unwrap();
 
-    contest.play();
+    contest.play().expect("Failed to play contest");
     contest
         .history()
         .save_to("history.json")

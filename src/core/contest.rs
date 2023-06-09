@@ -2,7 +2,7 @@ use crate::core::bridge::Bridge;
 use crate::core::game_history::*;
 use crate::core::player::*;
 use crate::core::traits::*;
-use crate::core::BuilderError;
+use crate::core::{BuilderError, Error};
 use std::time::Instant;
 
 /// **API note:** Agents are moved into the contest, as they should not be reused.
@@ -18,6 +18,7 @@ where
     history: GameHistory<G>,
     player_a: Player<A, BrA>,
     player_b: Player<B, BrB>,
+    encountered_error: bool,
 }
 
 impl<G, A, B, BrA, BrB> Contest<G, A, B, BrA, BrB>
@@ -43,15 +44,26 @@ where
         &self.player_b
     }
 
+    fn is_over(&self) -> bool {
+        self.state.is_terminal()
+    }
+
     /// Returns a reference to the current state of the game.
     pub fn state(&self) -> &G::State {
         &self.state
     }
 
     /// Plays out a full game between the two agents and returns the result.
-    pub fn play(&mut self) -> Option<G::GameResult> {
-        for _ in &mut *self {}
-        self.game_result()
+    pub fn play(&mut self) -> Result<G::GameResult, Error> {
+        for res in &mut *self {
+            if res.is_err() {
+                return Err(res.unwrap_err());
+            }
+        }
+        return Ok(self
+            .state
+            .game_result()
+            .expect("No game result provided even though game is over"));
     }
 
     pub fn history(&self) -> &GameHistory<G> {
@@ -67,7 +79,7 @@ where
     BrA: Bridge<A>,
     BrB: Bridge<B>,
 {
-    type Item = (G::State, G::Action, G::State);
+    type Item = Result<(G::State, G::Action, G::State), Error>;
 
     /// Advances the ManagedContest to the next state, calling each agent in turn
     /// to recommend an action and then yielding the action and resulting state.
@@ -86,6 +98,10 @@ where
     /// }
     /// ```
     fn next(&mut self) -> Option<Self::Item> {
+        if self.encountered_error {
+            return None;
+        }
+
         if self.state.is_terminal() {
             return None;
         }
@@ -103,8 +119,28 @@ where
         } else {
             self.player_b.recommend_action(&self.state)
         };
-
         let agent_time = agent_start.elapsed();
+
+        // if action is error, we need to return the error and stop the contest
+        if let Err(e) = action {
+            self.encountered_error = true;
+            return Some(Err(e));
+        }
+
+        // if the agent took too long, we need to return the error and stop the contest
+        if self.state.ply() % 2 == 1 {
+            if agent_time > self.agent_a().time_limit() {
+                self.encountered_error = true;
+                return Some(Err(Error::TimeLimitExceeded));
+            }
+        } else {
+            if agent_time > self.agent_b().time_limit() {
+                self.encountered_error = true;
+                return Some(Err(Error::TimeLimitExceeded));
+            }
+        }
+
+        let action = action.unwrap(); // unwrap checked above
 
         // apply the action, finishing the turn - INVARIANT IS RESTORED
         self.state = self.state.apply_action(&action);
@@ -113,7 +149,7 @@ where
         self.history
             .add_turn(action.clone(), self.state.clone(), agent_time);
 
-        Some((old_state, action, self.state.clone()))
+        Some(Ok((old_state, action, self.state.clone())))
     }
 }
 
@@ -184,6 +220,7 @@ where
             ),
             player_a: self.player_a.unwrap(),
             player_b: self.player_b.unwrap(),
+            encountered_error: false,
         })
     }
 }

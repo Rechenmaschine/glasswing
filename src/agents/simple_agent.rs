@@ -1,4 +1,5 @@
 use crate::core::traits::*;
+use crate::core::Error;
 use std::marker::PhantomData;
 use std::time::Duration;
 
@@ -28,11 +29,11 @@ impl<G: Game> Agent for SimpleAgent<G> {
         &mut self,
         state: &<<Self as Agent>::Game as Game>::State,
         _: Duration,
-    ) -> <G as Game>::Action {
-        state
+    ) -> Result<<G as Game>::Action, Error> {
+        Ok(state
             .actions()
             .get(0)
             .expect("No actions available")
-            .clone()
+            .clone())
     }
 }

@@ -11,3 +11,17 @@ pub use traits::*;
 pub enum BuilderError {
     MissingAttribute(&'static str),
 }
+
+// Agent error
+#[derive(Debug)]
+pub enum Error {
+    Timeout,
+    InvalidAction,
+    IllegalAction,
+    InvalidState,
+    NoAvailableActions,
+    TimeLimitExceeded,
+    EvaluationError,
+    GameNotOver,
+    Other(&'static str),
+}
