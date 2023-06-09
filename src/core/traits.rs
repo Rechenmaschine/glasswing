@@ -2,20 +2,18 @@ use crate::core::Error;
 use std::fmt::Debug;
 use std::time::Duration;
 
+// Hack for including conditional serde support without having to
+// redefine all traits
 #[cfg(feature = "serde_support")]
-mod serde_support {
-    pub use serde::de::DeserializeOwned as MaybeDeserializeOwned;
-    pub use serde::ser::Serialize as MaybeSerialize;
-}
+pub use serde::de::DeserializeOwned as MaybeDeserializeOwned;
+#[cfg(feature = "serde_support")]
+pub use serde::ser::Serialize as MaybeSerialize;
 
 #[cfg(not(feature = "serde_support"))]
-mod serde_support {
-    pub use std::any::Any as MaybeSerialize;
-    pub use std::any::Any as MaybeDeserializeOwned;
-}
+pub use std::any::Any as MaybeSerialize;
+#[cfg(not(feature = "serde_support"))]
+pub use std::any::Any as MaybeDeserializeOwned;
 
-use serde_support::MaybeDeserializeOwned;
-use serde_support::MaybeSerialize;
 
 pub trait Agent {
     type Game: Game;
