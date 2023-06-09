@@ -115,7 +115,7 @@ impl State<CountingGame> for CountingState {
     }
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CountingAction {
     pub increment: u8,
 }

@@ -77,13 +77,13 @@ pub trait GameResult<G: Game>: Clone + Debug + MaybeSerialize + MaybeDeserialize
 /// Certain actions, such as incrementing the ply or applying an action, are only allowed in certain states.
 /// To avoid invariants, the user should refrain from calling functions in the "await" state, by calling [Self::next_state],
 /// which increments the ply and applies the action.
-pub trait State<G: Game<State = Self>>:
-    Clone + Debug + MaybeSerialize + MaybeDeserializeOwned
+pub trait State<G: Game<State=Self>>:
+Clone + Debug + MaybeSerialize + MaybeDeserializeOwned
 {
     /// Returns true, if the provided action is legal in the current state
     /// By default, this function checks if the action is in the list of legal actions
     /// provided by [Self::actions]
-    fn is_legal(&self, action: &G::Action) -> bool{
+    fn is_legal(&self, action: &G::Action) -> bool {
         self.actions().contains(action)
     }
 
@@ -130,8 +130,8 @@ pub trait State<G: Game<State = Self>>:
     fn game_result(&self) -> Option<G::GameResult>;
 }
 
-pub trait Team<G: Game<Team = Self>>:
-    Copy + Clone + Debug + Eq + PartialEq + MaybeSerialize + MaybeDeserializeOwned
+pub trait Team<G: Game<Team=Self>>:
+Copy + Clone + Debug + Eq + PartialEq + MaybeSerialize + MaybeDeserializeOwned
 {
     /// In the total order of teams, return the team after this one
     fn next(&self) -> Self;
@@ -151,7 +151,6 @@ pub trait Team<G: Game<Team = Self>>:
     }
 }
 
-pub trait Action<G: Game<Action = Self>>:
-    Clone + Debug + MaybeSerialize + MaybeDeserializeOwned
-{
-}
+pub trait Action<G: Game<Action=Self>>:
+Clone + Debug + PartialEq + MaybeSerialize + MaybeDeserializeOwned
+{}
