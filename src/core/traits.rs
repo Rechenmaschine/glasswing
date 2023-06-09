@@ -82,7 +82,16 @@ pub trait GameResult<G: Game>: Clone + Debug + MaybeSerialize + MaybeDeserialize
 pub trait State<G: Game<State = Self>>:
     Clone + Debug + MaybeSerialize + MaybeDeserializeOwned
 {
-    /// Returns a vector of all possible actions that can be taken from this state
+    /// Returns true, if the provided action is legal in the current state
+    /// By default, this function checks if the action is in the list of legal actions
+    /// provided by [Self::actions]
+    fn is_legal(&self, action: &G::Action) -> bool{
+        self.actions().contains(action)
+    }
+
+    /// Returns a vector of all **legal** actions that can be taken from this state
+    ///
+    /// To ensure compatibility, this function should only be called in the "await" state.
     fn actions(&self) -> Vec<G::Action>;
 
     /// Returns a vector of all possible substates that can be reached from this state
@@ -113,7 +122,7 @@ pub trait State<G: Game<State = Self>>:
     /// This function **should not** advance the state to the next ply. For this purpose, implement [Self::advance_ply] instead.
     fn apply_action(&self, action: &G::Action) -> Self;
 
-    /// Advances the game state by one ply, ending the turn of the current player
+    /// Advances the game state by one ply, starting the turn of the next player
     fn advance_ply(&self) -> Self;
 
     /// Returns true, if this state is terminal, ie. if the game is over

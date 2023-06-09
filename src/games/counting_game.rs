@@ -72,6 +72,10 @@ impl CountingState {
 }
 
 impl State<CountingGame> for CountingState {
+    fn is_legal(&self, action: &CountingAction) -> bool {
+        action.increment <= 3 && action.increment > 0
+    }
+
     fn actions(&self) -> Vec<CountingAction> {
         vec![
             CountingAction { increment: 1 },
@@ -137,9 +141,9 @@ impl Evaluator<CountingGame> for CountingGameEvaluator {
             // the heuristic: the higher the score is, the better.
             Ok(state.total as f32
                 * match state.current_team() {
-                    CountingTeam::One => 1.0,
-                    CountingTeam::Two => -1.0,
-                })
+                CountingTeam::One => 1.0,
+                CountingTeam::Two => -1.0,
+            })
         }
     }
 }

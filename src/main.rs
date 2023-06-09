@@ -17,8 +17,20 @@ fn main() {
 
     let mut contest = ContestBuilder::new()
         .initial_state(CountingGame::initial_state())
-        .player_starts(PlayerBuilder::new().agent(agent1).build().unwrap())
-        .plays_aginst(PlayerBuilder::new().agent(agent2).build().unwrap())
+        .player_starts(
+            PlayerBuilder::new()
+                .name("agent-1")
+                .agent(agent1)
+                .build()
+                .unwrap(),
+        )
+        .plays_aginst(
+            PlayerBuilder::new()
+                .name("agent-2")
+                .agent(agent2)
+                .build()
+                .unwrap(),
+        )
         .build()
         .unwrap();
 

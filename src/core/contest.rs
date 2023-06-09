@@ -142,6 +142,11 @@ where
 
         let action = action.unwrap(); // unwrap checked above
 
+        if !self.state.is_legal(&action) {
+            self.encountered_error = true;
+            return Some(Err(Error::IllegalAction));
+        }
+
         // apply the action, finishing the turn - INVARIANT IS RESTORED
         self.state = self.state.apply_action(&action);
 
