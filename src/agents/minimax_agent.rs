@@ -1,5 +1,6 @@
 use crate::core::traits::*;
 use std::marker::PhantomData;
+use std::time::Duration;
 
 pub struct MiniMaxAgent<G: Game, E: Evaluator<G>> {
     depth: u32,
@@ -66,9 +67,10 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
 impl<G: Game, E: Evaluator<G>> Agent for MiniMaxAgent<G, E> {
     type Game = G;
 
-    fn recommend_move(
+    fn recommend_action(
         &mut self,
         state: &<<Self as Agent>::Game as Game>::State,
+        _: Duration,
     ) -> <G as Game>::Action {
         let mut best_eval = f32::NEG_INFINITY;
         let mut best_action = None;

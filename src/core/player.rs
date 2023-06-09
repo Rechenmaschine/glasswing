@@ -11,7 +11,7 @@ pub struct Player<A: Agent, Br: Bridge<A>> {
 }
 
 impl<A: Agent, Br: Bridge<A>> Player<A, Br> {
-    pub fn recommend_move(
+    pub fn recommend_action(
         &mut self,
         state: &<A::Game as Game>::State,
     ) -> <A::Game as Game>::Action {

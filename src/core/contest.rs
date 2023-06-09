@@ -99,9 +99,9 @@ where
 
         // ply 1 is the first action, so agent A starts
         let action = if self.state.ply() % 2 == 1 {
-            self.player_a.recommend_move(&self.state)
+            self.player_a.recommend_action(&self.state)
         } else {
-            self.player_b.recommend_move(&self.state)
+            self.player_b.recommend_action(&self.state)
         };
 
         let agent_time = agent_start.elapsed();

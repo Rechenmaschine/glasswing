@@ -3,6 +3,7 @@ use rand::prelude::ThreadRng;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use std::marker::PhantomData;
+use std::time::Duration;
 
 pub struct RandomAgent<G: Game, R: Rng> {
     rng: R,
@@ -27,10 +28,11 @@ impl<G: Game> Default for RandomAgent<G, ThreadRng> {
 impl<G: Game, R: Rng> Agent for RandomAgent<G, R> {
     type Game = G;
 
-    fn recommend_move(
+    fn recommend_action(
         &mut self,
         state: &<<Self as Agent>::Game as Game>::State,
-    ) -> <G as Game>::Action {
+        _: Duration,
+    ) -> <<Self as Agent>::Game as Game>::Action {
         state.actions().choose(&mut self.rng).unwrap().clone()
     }
 }

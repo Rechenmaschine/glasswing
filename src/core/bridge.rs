@@ -23,6 +23,6 @@ impl<A: Agent> Bridge<A> for A {
         state: &<A::Game as Game>::State,
         time_limit: Duration,
     ) -> <A::Game as Game>::Action {
-        self.recommend_move_with_time(state, time_limit)
+        self.recommend_action(state, time_limit)
     }
 }

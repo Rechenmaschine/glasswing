@@ -20,18 +20,11 @@ pub trait Agent {
     type Game: Game;
 
     /// Returns the recommended move for the given state
-    fn recommend_move(
+    fn recommend_action(
         &mut self,
         state: &<<Self as Agent>::Game as Game>::State,
+        time_limit: Duration,
     ) -> <<Self as Agent>::Game as Game>::Action;
-
-    fn recommend_move_with_time(
-        &mut self,
-        state: &<<Self as Agent>::Game as Game>::State,
-        _: Duration,
-    ) -> <<Self as Agent>::Game as Game>::Action {
-        self.recommend_move(state)
-    }
 }
 
 pub trait Evaluator<G: Game> {
