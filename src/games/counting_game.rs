@@ -141,9 +141,9 @@ impl Evaluator<CountingGame> for CountingGameEvaluator {
             // the heuristic: the higher the score is, the better.
             Ok(state.total as f32
                 * match state.current_team() {
-                CountingTeam::One => 1.0,
-                CountingTeam::Two => -1.0,
-            })
+                    CountingTeam::One => 1.0,
+                    CountingTeam::Two => -1.0,
+                })
         }
     }
 }

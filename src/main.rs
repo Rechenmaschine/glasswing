@@ -9,6 +9,7 @@ use crate::games::counting_game::{CountingGame, CountingGameEvaluator};
 mod agents;
 mod core;
 mod games;
+mod ranking;
 
 fn main() {
     let agent1: RandomAgent<CountingGame, _> = RandomAgent::default();

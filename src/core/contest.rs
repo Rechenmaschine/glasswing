@@ -5,28 +5,24 @@ use crate::core::{BuilderError, Error};
 use std::time::Instant;
 
 /// **API note:** Agents are moved into the contest, as they should not be reused.
-pub struct Contest<G, A, B, BrA, BrB>
+pub struct Contest<G, A, B>
 where
     G: Game,
     A: Agent<Game = G>,
     B: Agent<Game = G>,
-    BrA: Bridge<A>,
-    BrB: Bridge<B>,
 {
     state: G::State,
     history: GameHistory<G>,
-    player_a: Player<A, BrA>,
-    player_b: Player<B, BrB>,
+    player_a: Player<A>,
+    player_b: Player<B>,
     encountered_error: bool,
 }
 
-impl<G, A, B, BrA, BrB> Contest<G, A, B, BrA, BrB>
+impl<G, A, B> Contest<G, A, B>
 where
     G: Game,
     A: Agent<Game = G>,
     B: Agent<Game = G>,
-    BrA: Bridge<A>,
-    BrB: Bridge<B>,
 {
     /// Returns the result of the game or None if the game is not over.
     pub fn game_result(&self) -> Option<G::GameResult> {
@@ -34,12 +30,12 @@ where
     }
 
     /// Returns a reference to Agent A.
-    pub fn agent_a(&self) -> &Player<A, BrA> {
+    pub fn agent_a(&self) -> &Player<A> {
         &self.player_a
     }
 
     /// Returns a reference to Agent B.
-    pub fn agent_b(&self) -> &Player<B, BrB> {
+    pub fn agent_b(&self) -> &Player<B> {
         &self.player_b
     }
 
@@ -70,13 +66,11 @@ where
     }
 }
 
-impl<G, A, B, BrA, BrB> Iterator for &mut Contest<G, A, B, BrA, BrB>
+impl<G, A, B> Iterator for &mut Contest<G, A, B>
 where
     G: Game,
     A: Agent<Game = G>,
     B: Agent<Game = G>,
-    BrA: Bridge<A>,
-    BrB: Bridge<B>,
 {
     type Item = Result<(G::State, G::Action, G::State), Error>;
 
@@ -157,26 +151,22 @@ where
     }
 }
 
-pub struct ContestBuilder<G, A, B, BrA, BrB>
+pub struct ContestBuilder<G, A, B>
 where
     G: Game,
     A: Agent<Game = G>,
     B: Agent<Game = G>,
-    BrA: Bridge<A>,
-    BrB: Bridge<B>,
 {
     state: Option<G::State>,
-    player_a: Option<Player<A, BrA>>,
-    player_b: Option<Player<B, BrB>>,
+    player_a: Option<Player<A>>,
+    player_b: Option<Player<B>>,
 }
 
-impl<G, A, B, BrA, BrB> ContestBuilder<G, A, B, BrA, BrB>
+impl<G, A, B> ContestBuilder<G, A, B>
 where
     G: Game,
     A: Agent<Game = G>,
     B: Agent<Game = G>,
-    BrA: Bridge<A>,
-    BrB: Bridge<B>,
 {
     /// Create a new contest builder
     pub fn new() -> Self {
@@ -193,19 +183,19 @@ where
     }
 
     /// Set the player that will start the game.
-    pub fn player_starts(mut self, player: Player<A, BrA>) -> Self {
+    pub fn player_starts(mut self, player: Player<A>) -> Self {
         self.player_a = Some(player);
         self
     }
 
     /// Set the player that will play second.
-    pub fn plays_aginst(mut self, player: Player<B, BrB>) -> Self {
+    pub fn plays_aginst(mut self, player: Player<B>) -> Self {
         self.player_b = Some(player);
         self
     }
 
     /// Build the contest, returning an error if any required attributes are missing.
-    pub fn build(mut self) -> Result<Contest<G, A, B, BrA, BrB>, BuilderError> {
+    pub fn build(mut self) -> Result<Contest<G, A, B>, BuilderError> {
         if self.state.is_none() {
             self.state = Some(G::initial_state());
         }

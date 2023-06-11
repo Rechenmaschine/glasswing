@@ -1,15 +1,15 @@
-use crate::core::{Agent, Bridge, BuilderError, Error, Game};
+use crate::core::{Agent, BuilderError, Error, Game};
 use std::any::type_name;
 use std::time::Duration;
 
-pub struct Player<A: Agent, Br: Bridge<A>> {
-    agent: Br,
+pub struct Player<A: Agent> {
+    agent: A,
     name: &'static str,
     time_limit: Duration,
     _marker: std::marker::PhantomData<A>,
 }
 
-impl<A: Agent, Br: Bridge<A>> Player<A, Br> {
+impl<A: Agent> Player<A> {
     pub fn recommend_action(
         &mut self,
         state: &<A::Game as Game>::State,
@@ -27,14 +27,14 @@ impl<A: Agent, Br: Bridge<A>> Player<A, Br> {
 }
 
 /// implement builder pattern for Player
-pub struct PlayerBuilder<A: Agent, Br: Bridge<A>> {
-    agent: Option<Br>,
+pub struct PlayerBuilder<A: Agent> {
+    agent: Option<A>,
     name: Option<&'static str>,
     time_limit: Option<Duration>,
     _marker: std::marker::PhantomData<A>,
 }
 
-impl<A: Agent, Br: Bridge<A>> PlayerBuilder<A, Br> {
+impl<A: Agent> PlayerBuilder<A> {
     /// Create a new PlayerBuilder
     pub fn new() -> Self {
         PlayerBuilder {
@@ -46,7 +46,7 @@ impl<A: Agent, Br: Bridge<A>> PlayerBuilder<A, Br> {
     }
 
     /// Set the agent used for move recommendation in the player
-    pub fn agent(mut self, agent: Br) -> Self {
+    pub fn agent(mut self, agent: A) -> Self {
         self.agent = Some(agent);
         self
     }
@@ -65,11 +65,11 @@ impl<A: Agent, Br: Bridge<A>> PlayerBuilder<A, Br> {
     }
 
     /// Build the player. Returns an error if a required attribute is missing.
-    pub fn build(self) -> Result<Player<A, Br>, BuilderError> {
+    pub fn build(self) -> Result<Player<A>, BuilderError> {
         if let Some(agent) = self.agent {
             Ok(Player {
                 agent,
-                name: self.name.unwrap_or_else(|| type_name::<Br>()),
+                name: self.name.unwrap_or_else(|| type_name::<A>()),
                 time_limit: self.time_limit.unwrap_or(Duration::MAX),
                 _marker: Default::default(),
             })
