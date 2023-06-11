@@ -33,13 +33,17 @@ enum StateStage {
 // serde support for serializing and deserializing objects. If the feature "serde_support" is
 // enabled, they refer to serde's `DeserializeOwned` and `Serialize` traits, otherwise they refer
 // to [std::any::Any].
+#[doc(hidden)]
 #[cfg(feature = "serde_support")]
 pub use serde::de::DeserializeOwned as MaybeDeserializeOwned;
+#[doc(hidden)]
 #[cfg(feature = "serde_support")]
 pub use serde::ser::Serialize as MaybeSerialize;
 
+#[doc(hidden)]
 #[cfg(not(feature = "serde_support"))]
 pub use std::any::Any as MaybeSerialize;
+#[doc(hidden)]
 #[cfg(not(feature = "serde_support"))]
 pub use std::any::Any as MaybeDeserializeOwned;
 
@@ -245,7 +249,7 @@ pub trait GameResult<G: Game>: Clone + Debug + MaybeSerialize + MaybeDeserialize
     fn is_draw(&self) -> bool;
 }
 
-/// This trait describes a state in a game.
+/// The `State` trait describes a state in a game.
 ///
 /// A state in a game typically contains all the necessary information to reflect the current situation of the game.
 /// Depending on the game, a state could include the positions of all pieces in a chess game or the current score in a sports game.
@@ -365,7 +369,7 @@ Clone + Debug + MaybeSerialize + MaybeDeserializeOwned
     fn game_result(&self) -> Option<G::GameResult>;
 }
 
-/// This trait encapsulates the concept of a team or a player in a two-player game.
+/// The `Team` trait encapsulates the concept of a team or a player in a two-player game.
 ///
 /// Implementations of this trait will differ based on the specifics of the game,
 /// but common uses might include representing a color in a board game (like chess or checkers),
