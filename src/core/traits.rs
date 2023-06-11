@@ -33,19 +33,15 @@ enum StateStage {
 // serde support for serializing and deserializing objects. If the feature "serde_support" is
 // enabled, they refer to serde's `DeserializeOwned` and `Serialize` traits, otherwise they refer
 // to [std::any::Any].
-#[doc(hidden)]
 #[cfg(feature = "serde_support")]
-pub use serde::de::DeserializeOwned as MaybeDeserializeOwned;
-#[doc(hidden)]
+use serde::de::DeserializeOwned as MaybeDeserializeOwned;
 #[cfg(feature = "serde_support")]
-pub use serde::ser::Serialize as MaybeSerialize;
+use serde::ser::Serialize as MaybeSerialize;
 
-#[doc(hidden)]
 #[cfg(not(feature = "serde_support"))]
-pub use std::any::Any as MaybeSerialize;
-#[doc(hidden)]
+use std::any::Any as MaybeSerialize;
 #[cfg(not(feature = "serde_support"))]
-pub use std::any::Any as MaybeDeserializeOwned;
+use std::any::Any as MaybeDeserializeOwned;
 
 /// The `Agent` trait represents an entity that can interact with and make decisions in a game.
 ///
