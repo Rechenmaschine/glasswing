@@ -1,5 +1,5 @@
 use crate::core::traits::*;
-use crate::core::Error;
+use anyhow::Error;
 use std::marker::PhantomData;
 use std::time::Duration;
 
@@ -22,14 +22,8 @@ impl<G: Game> Default for SimpleAgent<G> {
     }
 }
 
-impl<G: Game> Agent for SimpleAgent<G> {
-    type Game = G;
-
-    fn recommend_action(
-        &mut self,
-        state: &<<Self as Agent>::Game as Game>::State,
-        _: Duration,
-    ) -> Result<<G as Game>::Action, Error> {
+impl<G: Game> Agent<G> for SimpleAgent<G> {
+    fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
         Ok(state
             .actions()
             .get(0)

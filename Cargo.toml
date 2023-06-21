@@ -7,8 +7,13 @@ authors = ["Louis schell <louis.schell1@gmx.de>"]
 
 [dependencies]
 rand = "0.8.5"
-serde = { version = "1.0.163", features = ["derive"] }
-serde_json = { version = "1.0.96" }
+serde = { version = "1.0.163", features = ["derive"], optional = true }
+serde_json = { version = "1.0.96", optional = true }
+anyhow = "1.0.71"
+thiserror = "1.0.40"
+
+tournament-rs = { git = "https://github.com/Rechenmaschine/tournament-rs.git", optional = true }
 
 [features]
-serde_support = []
+serde_support = ["serde", "serde_json"]
+tournaments = ["tournament-rs"]

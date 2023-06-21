@@ -1,5 +1,5 @@
 use crate::core::traits::*;
-use crate::core::Error;
+use anyhow::Error;
 use std::marker::PhantomData;
 use std::time::Duration;
 
@@ -65,14 +65,8 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
     }
 }
 
-impl<G: Game, E: Evaluator<G>> Agent for MiniMaxAgent<G, E> {
-    type Game = G;
-
-    fn recommend_action(
-        &mut self,
-        state: &<G as Game>::State,
-        _: Duration,
-    ) -> Result<<G as Game>::Action, Error> {
+impl<G: Game, E: Evaluator<G>> Agent<G> for MiniMaxAgent<G, E> {
+    fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
         let mut best_eval = f32::NEG_INFINITY;
         let mut best_action = None;
 
@@ -94,6 +88,6 @@ impl<G: Game, E: Evaluator<G>> Agent for MiniMaxAgent<G, E> {
             }
         }
 
-        best_action.ok_or(Error::NoAvailableActions)
+        best_action.ok_or(GameError::<G>::NoAvailableActions(state.clone()).into())
     }
 }

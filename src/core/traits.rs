@@ -1,6 +1,7 @@
-use crate::core::Error;
+use anyhow::Error;
 use std::fmt::Debug;
 use std::time::Duration;
+use thiserror::Error;
 
 /// `StateStage` describes the stages of a state in terms of a the state machine.
 #[allow(dead_code)]
@@ -29,19 +30,27 @@ enum StateStage {
     Terminal,
 }
 
-// The `MaybeDeserializeOwned` and `MaybeSerialize` traits provide conditional
+// The `DeserializeOwnedAlias` and `SerializeAlias` traits provide conditional
 // serde support for serializing and deserializing objects. If the feature "serde_support" is
 // enabled, they refer to serde's `DeserializeOwned` and `Serialize` traits, otherwise they refer
 // to [std::any::Any].
 #[cfg(feature = "serde_support")]
-use serde::de::DeserializeOwned as MaybeDeserializeOwned;
-#[cfg(feature = "serde_support")]
-use serde::ser::Serialize as MaybeSerialize;
+use serde::{de::DeserializeOwned as DeserializeOwnedAlias, ser::Serialize as SerializeAlias};
 
 #[cfg(not(feature = "serde_support"))]
-use std::any::Any as MaybeSerialize;
-#[cfg(not(feature = "serde_support"))]
-use std::any::Any as MaybeDeserializeOwned;
+use std::any::{Any as DeserializeOwnedAlias, Any as SerializeAlias};
+
+#[cfg(feature = "tournaments")]
+use tournament_rs::prelude::MatchResult as TournamentMatchResultAlias;
+
+#[cfg(not(feature = "tournaments"))]
+use std::any::Any as TournamentMatchResultAlias;
+
+#[derive(Error, Debug)]
+pub enum GameError<G: Game> {
+    #[error("No legal actions available in state {0:?}")]
+    NoAvailableActions(G::State),
+}
 
 /// The `Agent` trait represents an entity that can interact with and make decisions in a game.
 ///
@@ -79,9 +88,7 @@ use std::any::Any as MaybeDeserializeOwned;
 ///     }
 /// }
 /// ```
-pub trait Agent {
-    type Game: Game;
-
+pub trait Agent<G: Game>: Send {
     /// Returns the recommended action for the given state.
     ///
     /// # Arguments
@@ -91,9 +98,9 @@ pub trait Agent {
     /// * `time_limit` - The time limit for the agent to complete recommendation of an action.
     fn recommend_action(
         &mut self,
-        state: &<<Self as Agent>::Game as Game>::State,
+        state: &G::State,
         time_limit: Duration,
-    ) -> Result<<<Self as Agent>::Game as Game>::Action, Error>;
+    ) -> Result<G::Action, Error>;
 }
 
 /// The `Evaluator` trait defines a heuristic function for evaluating the state of a game.
@@ -126,7 +133,7 @@ pub trait Agent {
 ///     }
 /// }
 /// ```
-pub trait Evaluator<G: Game> {
+pub trait Evaluator<G: Game>: Send + Sync {
     /// Evaluates the given state for a two-player game.
     ///
     /// The magnitude of the score indicates how likely a player is to win.
@@ -173,8 +180,10 @@ pub trait Evaluator<G: Game> {
 /// }
 /// ```
 ///
-/// Note: `MaybeSerialize` and `MaybeDeserializeOwned` are used for serialization and deserialization support.
-pub trait Game: Sized + MaybeSerialize + MaybeDeserializeOwned {
+/// Note: `SerializeAlias` and `DeserializeOwnedAlias` are used for serialization and deserialization support.
+pub trait Game:
+    Sized + Debug + Send + Sync + SerializeAlias + DeserializeOwnedAlias + 'static
+{
     /// The type representing the state of the game. This could include the positions of
     /// all pieces in a chess game, the value of all cards in a card game, etc.
     type State: State<Self>;
@@ -189,6 +198,8 @@ pub trait Game: Sized + MaybeSerialize + MaybeDeserializeOwned {
     /// The type representing the result of a game. It usually includes information about
     /// the winner, loser, or whether the game was a draw.
     type GameResult: GameResult<Self>;
+
+    const NAME: &'static str;
 
     /// Returns the initial state of the game. The initial state always has ply 0.
     /// This should be an invalid state, a starting position that is not reachable by any action.
@@ -231,8 +242,10 @@ pub trait Game: Sized + MaybeSerialize + MaybeDeserializeOwned {
 /// }
 /// ```
 ///
-/// Note: `MaybeSerialize` and `MaybeDeserializeOwned` are used for serialization and deserialization support.
-pub trait GameResult<G: Game>: Clone + Debug + MaybeSerialize + MaybeDeserializeOwned {
+/// Note: `SerializeAlias` and `DeserializeOwnedAlias` are used for serialization and deserialization support.
+pub trait GameResult<G: Game>:
+    Clone + Debug + Send + Sync + SerializeAlias + DeserializeOwnedAlias + TournamentMatchResultAlias
+{
     /// The winner of the game
     fn winner(&self) -> Option<G::Team>;
 
@@ -292,9 +305,9 @@ pub trait GameResult<G: Game>: Clone + Debug + MaybeSerialize + MaybeDeserialize
 /// }
 /// ```
 ///
-/// Note: `MaybeSerialize` and `MaybeDeserializeOwned` are used for serialization and deserialization support.
-pub trait State<G: Game<State=Self>>:
-Clone + Debug + MaybeSerialize + MaybeDeserializeOwned
+/// Note: `SerializeAlias` and `DeserializeOwnedAlias` are used for serialization and deserialization support.
+pub trait State<G: Game<State = Self>>:
+    Clone + Debug + Sync + Send + SerializeAlias + DeserializeOwnedAlias
 {
     /// Returns true, if the provided action is legal in the current state
     /// By default, this function checks if the action is in the list of legal actions
@@ -402,9 +415,9 @@ Clone + Debug + MaybeSerialize + MaybeDeserializeOwned
 /// }
 /// ```
 ///
-/// Note: `MaybeSerialize` and `MaybeDeserializeOwned` are used for serialization and deserialization support.
-pub trait Team<G: Game<Team=Self>>:
-Copy + Clone + Debug + Eq + PartialEq + MaybeSerialize + MaybeDeserializeOwned
+/// Note: `SerializeAlias` and `DeserializeOwnedAlias` are used for serialization and deserialization support.
+pub trait Team<G: Game<Team = Self>>:
+    Copy + Clone + Debug + Eq + PartialEq + Send + Sync + SerializeAlias + DeserializeOwnedAlias
 {
     /// In the total order of teams, return the team after this one
     fn next(&self) -> Self;
@@ -449,7 +462,8 @@ Copy + Clone + Debug + Eq + PartialEq + MaybeSerialize + MaybeDeserializeOwned
 /// impl Action<Chess> for ChessMove { /*...*/ }
 /// ```
 ///
-/// Note: `MaybeSerialize` and `MaybeDeserializeOwned` are used for serialization and deserialization support.
-pub trait Action<G: Game<Action=Self>>:
-Clone + Debug + PartialEq + MaybeSerialize + MaybeDeserializeOwned
-{}
+/// Note: `SerializeAlias` and `DeserializeOwnedAlias` are used for serialization and deserialization support.
+pub trait Action<G: Game<Action = Self>>:
+    Clone + Debug + PartialEq + Send + Sync + SerializeAlias + DeserializeOwnedAlias
+{
+}

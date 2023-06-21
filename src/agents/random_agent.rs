@@ -1,5 +1,5 @@
 use crate::core::traits::*;
-use crate::core::Error;
+use anyhow::Error;
 use rand::prelude::ThreadRng;
 use rand::seq::SliceRandom;
 use rand::Rng;
@@ -26,14 +26,8 @@ impl<G: Game> Default for RandomAgent<G, ThreadRng> {
     }
 }
 
-impl<G: Game, R: Rng> Agent for RandomAgent<G, R> {
-    type Game = G;
-
-    fn recommend_action(
-        &mut self,
-        state: &<G as Game>::State,
-        _: Duration,
-    ) -> Result<<G as Game>::Action, Error> {
+impl<G: Game, R: Rng + Send> Agent<G> for RandomAgent<G, R> {
+    fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
         Ok(state.actions().choose(&mut self.rng).unwrap().clone())
     }
 }

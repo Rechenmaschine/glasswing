@@ -1,6 +1,9 @@
 use crate::core::traits::*;
-use crate::core::Error;
+use anyhow::{anyhow, Error};
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "tournaments")]
+use tournament_rs::game::{MatchResult, Outcome};
 
 /// A game, where each player can add 0, 1 or 2 to a total. The player who counts to 21 first, wins.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -11,6 +14,8 @@ impl Game for CountingGame {
     type Action = CountingAction;
     type Team = CountingTeam;
     type GameResult = CountingGameResult;
+
+    const NAME: &'static str = "CountingGame";
 
     fn initial_state() -> Self::State {
         CountingState { total: 0, turn: 0 }
@@ -26,6 +31,19 @@ impl Game for CountingGame {
 pub enum CountingGameResult {
     Winner(CountingTeam),
     Draw,
+}
+
+#[cfg(feature = "tournaments")]
+impl MatchResult for CountingGameResult {
+    fn outcome(&self) -> Outcome {
+        match self.winner() {
+            None => Outcome::Draw,
+            Some(winner) => match winner {
+                CountingTeam::One => Outcome::WinP1,
+                CountingTeam::Two => Outcome::WinP2,
+            },
+        }
+    }
 }
 
 impl GameResult<CountingGame> for CountingGameResult {
@@ -136,7 +154,7 @@ impl Evaluator<CountingGame> for CountingGameEvaluator {
                     CountingTeam::Two => -100.0,
                 })
                 .or_else(|| Some(0.0))
-                .ok_or(Error::EvaluationError)
+                .ok_or(anyhow!("Error encountered while evaluating state"))
         } else {
             // the heuristic: the higher the score is, the better.
             Ok(state.total as f32
