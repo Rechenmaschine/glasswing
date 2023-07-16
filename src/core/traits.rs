@@ -47,9 +47,13 @@ use tournament_rs::prelude::MatchResult as TournamentMatchResultAlias;
 use std::any::Any as TournamentMatchResultAlias;
 
 #[derive(Error, Debug)]
-pub enum GameError<G: Game> {
+pub enum MatchError<G: Game> {
     #[error("No legal actions available in state {0:?}")]
     NoAvailableActions(G::State),
+    #[error("Invalid action in state (provided {action:?} in {state:?}")]
+    IllegalAction { action: G::Action, state: G::State },
+    #[error("Agent exceeded time limit: allowed {limit:?}, took {time:?}")]
+    TimeLimitExceeded { limit: Duration, time: Duration },
 }
 
 /// The `Agent` trait represents an entity that can interact with and make decisions in a game.

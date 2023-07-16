@@ -27,7 +27,7 @@ impl Game for CountingGame {
 }
 
 // CountingGameResult
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum CountingGameResult {
     Winner(CountingTeam),
     Draw,
@@ -79,8 +79,8 @@ impl Team<CountingGame> for CountingTeam {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CountingState {
-    total: u8,
-    turn: usize,
+    pub(crate) total: u8,
+    pub(crate) turn: usize,
 }
 
 impl CountingState {

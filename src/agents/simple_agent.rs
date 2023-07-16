@@ -24,10 +24,10 @@ impl<G: Game> Default for SimpleAgent<G> {
 
 impl<G: Game> Agent<G> for SimpleAgent<G> {
     fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
-        Ok(state
+        state
             .actions()
             .get(0)
-            .expect("No actions available")
-            .clone())
+            .cloned()
+            .ok_or_else(|| MatchError::<G>::NoAvailableActions(state.clone()).into())
     }
 }

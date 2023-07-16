@@ -26,8 +26,12 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
         beta: f32,
         maximizing_player: bool,
     ) -> f32 {
+        //TODO: return Result<f32, Error>
         if depth == 0 || state.is_terminal() {
-            return self.evaluator.evaluate(state).expect("Evaluation failed");
+            return self
+                .evaluator
+                .evaluate(&state.advance_ply())
+                .expect("Evaluation failed");
         }
 
         let mut new_alpha = alpha;
@@ -67,11 +71,15 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
 
 impl<G: Game, E: Evaluator<G>> Agent<G> for MiniMaxAgent<G, E> {
     fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
-        let mut best_eval = f32::NEG_INFINITY;
-        let mut best_action = None;
-
         // By convention, the maximizing player is the starting team
-        let maximizing_player = G::starting_team() == state.current_team(); // TODO: Is this sensible?
+        let maximizing_player = G::starting_team() == state.current_team();
+
+        let mut best_eval = if maximizing_player {
+            f32::NEG_INFINITY
+        } else {
+            f32::INFINITY
+        };
+        let mut best_action = None;
 
         for action in state.actions() {
             let child = state.next_state(&action);
@@ -80,14 +88,15 @@ impl<G: Game, E: Evaluator<G>> Agent<G> for MiniMaxAgent<G, E> {
                 self.depth - 1,
                 f32::NEG_INFINITY,
                 f32::INFINITY,
-                maximizing_player,
+                !maximizing_player,
             );
-            if eval > best_eval {
+
+            if (maximizing_player && eval > best_eval) || (!maximizing_player && eval < best_eval) {
                 best_eval = eval;
                 best_action = Some(action);
             }
         }
 
-        best_action.ok_or(GameError::<G>::NoAvailableActions(state.clone()).into())
+        best_action.ok_or(MatchError::<G>::NoAvailableActions(state.clone()).into())
     }
 }

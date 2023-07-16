@@ -1,6 +1,6 @@
-pub mod contest;
-pub mod game_history;
+pub mod pit;
 pub mod traits;
+//pub mod game_history;
 
-pub use contest::*;
+pub use pit::*;
 pub use traits::*;

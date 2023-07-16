@@ -11,9 +11,8 @@ serde = { version = "1.0.163", features = ["derive"], optional = true }
 serde_json = { version = "1.0.96", optional = true }
 anyhow = "1.0.71"
 thiserror = "1.0.40"
-
-tournament-rs = { git = "https://github.com/Rechenmaschine/tournament-rs.git", optional = true }
+log = "0.4.19"
+pretty_env_logger = "0.5.0"
 
 [features]
 serde_support = ["serde", "serde_json"]
-tournaments = ["tournament-rs"]
