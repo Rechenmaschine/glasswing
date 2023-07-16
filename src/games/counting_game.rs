@@ -1,12 +1,15 @@
 use crate::core::traits::*;
 use anyhow::{anyhow, Error};
+
+#[cfg(feature = "serde_support")]
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "tournaments")]
 use tournament_rs::game::{MatchResult, Outcome};
 
 /// A game, where each player can add 0, 1 or 2 to a total. The player who counts to 21 first, wins.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct CountingGame;
 
 impl Game for CountingGame {
@@ -27,7 +30,8 @@ impl Game for CountingGame {
 }
 
 // CountingGameResult
-#[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq, Debug)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum CountingGameResult {
     Winner(CountingTeam),
     Draw,
@@ -62,7 +66,8 @@ impl GameResult<CountingGame> for CountingGameResult {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum CountingTeam {
     One,
     Two,
@@ -77,7 +82,8 @@ impl Team<CountingGame> for CountingTeam {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct CountingState {
     pub(crate) total: u8,
     pub(crate) turn: usize,
@@ -133,7 +139,8 @@ impl State<CountingGame> for CountingState {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct CountingAction {
     pub increment: u8,
 }
