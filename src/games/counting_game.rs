@@ -108,20 +108,13 @@ impl State<CountingGame> for CountingState {
         ]
     }
 
-    fn ply(&self) -> usize {
+    fn turn(&self) -> usize {
         self.turn
     }
 
     fn apply_action(&self, action: &CountingAction) -> Self {
-        Self {
+        CountingState {
             total: self.total + action.increment,
-            turn: self.turn,
-        }
-    }
-
-    fn advance_ply(&self) -> Self {
-        Self {
-            total: self.total,
             turn: self.turn + 1,
         }
     }
@@ -132,7 +125,7 @@ impl State<CountingGame> for CountingState {
 
     fn game_result(&self) -> Option<CountingGameResult> {
         if self.total >= 21 {
-            Some(CountingGameResult::Winner(self.current_team()))
+            Some(CountingGameResult::Winner(self.team_to_move()))
         } else {
             None
         }
@@ -165,7 +158,7 @@ impl Evaluator<CountingGame> for CountingGameEvaluator {
         } else {
             // the heuristic: the higher the score is, the better.
             Ok(state.total as f32
-                * match state.current_team() {
+                * match state.team_to_move() {
                     CountingTeam::One => 1.0,
                     CountingTeam::Two => -1.0,
                 })

@@ -31,12 +31,12 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
             return self.evaluator.evaluate(state).unwrap();
         }
 
-        let maximizing_player = G::starting_team() != state.current_team();
+        let maximizing_player = G::starting_team() == state.team_to_move();
 
         if maximizing_player {
             let mut value = f32::MIN;
             for action in state.actions() {
-                let new_state = state.next_state(&action);
+                let new_state = state.apply_action(&action);
                 value = value.max(self.minimax(&new_state, depth - 1, alpha, beta));
                 alpha = alpha.max(value);
                 if alpha >= beta {
@@ -47,7 +47,7 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
         } else {
             let mut value = f32::MAX;
             for action in state.actions() {
-                let new_state = state.next_state(&action);
+                let new_state = state.apply_action(&action);
                 value = value.min(self.minimax(&new_state, depth - 1, alpha, beta));
                 beta = beta.min(value);
                 if beta <= alpha {
@@ -61,7 +61,7 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
 
 impl<G: Game, E: Evaluator<G>> Agent<G> for MiniMaxAgent<G, E> {
     fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
-        let maximizing_player = G::starting_team() == state.current_team();
+        let maximizing_player = G::starting_team() == state.team_to_move();
         let mut best_action = None;
         let mut best_value = if maximizing_player { f32::MIN } else { f32::MAX };
         let mut alpha = f32::MIN;

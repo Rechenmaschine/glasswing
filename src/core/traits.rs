@@ -3,33 +3,6 @@ use std::fmt::Debug;
 use std::time::Duration;
 use thiserror::Error;
 
-/// `StateStage` describes the stages of a state in terms of a the state machine.
-#[allow(dead_code)]
-enum StateStage {
-    /// This stage describes the state in ply 0. This is an invalid state, that cannot be reached
-    /// by any action. This should be used for setup, representing the starting position of
-    /// the game. In the state machine, the `Initial` stage is the starting state. Incrementing
-    /// the turn counter will move the state from `Initial` to `Await`.
-    Initial,
-
-    /// In the state machine, the `Await` stage describes the state in which the `turn` has
-    /// been incremented, but no action has been applied yet. This stage marks the beginning
-    /// of a turn. In this stage, an [crate::core::Agent] is asked to recommend an action for
-    /// the state. In the state machine, applying an action will move the state from `Await`
-    Await,
-
-    /// In the `Applied` stage, an action has been applied to the state. This stage marks the
-    /// end of a turn. In this stage, the state can be evaluated, checked for terminal, and
-    /// the next player can be determined. In the state machine, incrementing the turn counter
-    /// will move the state from `Await` to `Applied`. If the game is over instead, the state
-    /// will move to `Terminal`.
-    Applied,
-
-    /// In the `Terminal` stage, the game has ended. The state can be evaluated and the
-    /// `GameResult` can be determined. In the state machine, this stage is final.
-    Terminal,
-}
-
 // The `DeserializeOwnedAlias` and `SerializeAlias` traits provide conditional
 // serde support for serializing and deserializing objects. If the feature "serde_support" is
 // enabled, they refer to serde's `DeserializeOwned` and `Serialize` traits, otherwise they refer
@@ -332,15 +305,15 @@ pub trait State<G: Game<State = Self>>:
     ///
     /// **State machine** - This function can be called in the any stage other than the [StateStage::Initial]
     /// stage, since the first step when beginning a new turn is to increment the turn counter.
-    fn current_team(&self) -> G::Team {
-        Team::in_ply(self.ply())
+    fn team_to_move(&self) -> G::Team {
+        Team::in_turn(self.turn())
     }
 
     /// Returns the current ply of the game. The initial state should has a ply of 0. The ply
     /// is analog to the turn counter in a game. It is incremented at the *beginning* of a turn.
     ///
     /// **State machine** - This function can be called at any stage.
-    fn ply(&self) -> usize;
+    fn turn(&self) -> usize;
 
     /// Returns the next state after applying the given action and incrementing the turn counter.
     ///
@@ -351,22 +324,7 @@ pub trait State<G: Game<State = Self>>:
     /// returned should be in the [StateStage::Await] or [StateStage::Terminal] stage.
     ///
     /// **Note: This function should not be reimplemented**
-    fn next_state(&self, action: &G::Action) -> Self {
-        self.advance_ply().apply_action(action)
-    }
-
-    /// Applies an action to this state and returns the resulting state.
-    ///
-    /// This function **should not** advance the state to the next ply. For this purpose,
-    /// use [Self::advance_ply] instead.
-    ///
-    /// **State machine** - This function can be called in the [StateStage::Await] stage.
     fn apply_action(&self, action: &G::Action) -> Self;
-
-    /// Increments the turn counter, starting the turn of the next player.
-    ///
-    /// **State machine** - This function can be called in the [StateStage::Applied] stage.
-    fn advance_ply(&self) -> Self;
 
     /// Returns whether this state is terminal, ie. if the game is over or not. This is analog
     /// to checking whether the state machine is in the [StateStage::Terminal] stage.
@@ -438,8 +396,8 @@ pub trait Team<G: Game<Team = Self>>:
 
     /// Returns the team that plays the current ply. For example, if the current ply is 1,
     /// then the starting team plays. If the current ply is 2, then the team after that plays.
-    fn in_ply(ply: usize) -> Self {
-        G::starting_team().nth(ply as isize - 1)
+    fn in_turn(turn: usize) -> Self {
+        G::starting_team().nth(turn as isize)
     }
 }
 

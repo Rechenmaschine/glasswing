@@ -103,7 +103,7 @@ impl<G: Game> Match<G> {
 impl<G: Game> Iterator for Match<G> {
     type Item = Result<(G::State, G::Action, G::State), Error>;
 
-    /// Advances the ManagedContest to the next state, calling each agent in turn
+    /// Advances the match to the next state, calling each agent in turn
     /// to recommend an action and then yielding the action and resulting state.
     fn next(&mut self) -> Option<Self::Item> {
         if self.error {
@@ -116,11 +116,8 @@ impl<G: Game> Iterator for Match<G> {
 
         let old_state = self.state.clone();
 
-        // increment the turn - INVARIANT IS BROKEN
-        self.state = self.state.advance_ply();
-
         // ply 1 is the first action, so agent A starts
-        let player = if self.state.ply() % 2 == 1 {
+        let player = if self.state.turn() % 2 == 0 {
             &mut self.agent1
         } else {
             &mut self.agent2
@@ -160,7 +157,7 @@ impl<G: Game> Iterator for Match<G> {
             }
         }
 
-        // apply the action, finishing the turn - INVARIANT IS RESTORED
+        // apply the action to the state, finishing the turn
         self.state = self.state.apply_action(&action);
 
         debug!("Applied action: {:?}\n{:?}",action, self.state);

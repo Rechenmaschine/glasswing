@@ -52,22 +52,15 @@ impl<const N: usize> State<TicTacToe<N>> for TicTacToeState<N> {
         actions
     }
 
-    fn ply(&self) -> usize {
+    fn turn(&self) -> usize {
         self.turn
     }
 
     fn apply_action(&self, action: &TicTacToeAction) -> Self {
         let mut new_board = self.board.clone();
-        new_board[action.col][action.row] = Some(self.current_team());
+        new_board[action.col][action.row] = Some(self.team_to_move());
         Self {
             board: new_board,
-            turn: self.turn,
-        }
-    }
-
-    fn advance_ply(&self) -> Self {
-        Self {
-            board: self.board,
             turn: self.turn + 1,
         }
     }
@@ -161,7 +154,7 @@ impl<const N: usize> fmt::Display for TicTacToeState<N> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "Turn: {}", self.turn)?;
         // write team
-        writeln!(f, "Team: {:?}", self.current_team())?;
+        writeln!(f, "Team: {:?}", self.team_to_move())?;
         for row in self.board.iter() {
             for tile in row.iter() {
                 match tile {
@@ -236,7 +229,7 @@ impl<const N: usize> Evaluator<TicTacToe<N>> for TicTacToeEvaluator {
         if let Some(result) = state.game_result() {
             match result {
                 TicTacToeResult::Winner(team) => {
-                    if team == TicTacToeTeam::X {
+                    if team == TicTacToe::<N>::starting_team() {
                         Ok(100.0)
                     } else {
                         Ok(-100.0)
@@ -421,10 +414,10 @@ mod tests {
         let mut draws = 0;
 
         for i in 0..10 {
-            let minimax = MiniMaxAgent::new(7, TicTacToeEvaluator);
+            let minimax = MiniMaxAgent::new(10, TicTacToeEvaluator);
             let random = RandomAgent::new(OsRng::default());
 
-            let mut match_: Match<TicTacToe<10>> = if i % 2 == 0 {
+            let mut match_: Match<TicTacToe<3>> = if i % 2 == 0 {
                 Match::new(minimax, random)
             } else {
                 Match::new(random, minimax)
@@ -432,14 +425,62 @@ mod tests {
 
             match match_.playout() {
                 Ok(result) => {
-                    match result.game_result().expect("Game result should be present"){
+                    match result.game_result().expect("Game result should be present") {
                         Winner(winner) => {
                             if winner == X && i % 2 == 0 || winner == O && i % 2 == 1 {
                                 wins_minimax += 1;
                                 info!("Minimax won as team {:?}", winner)
-                            } else if winner == O && i % 2 == 1 || winner == X && i % 2 == 0 {
+                            } else if winner == O && i % 2 == 0 || winner == X && i % 2 == 1 {
                                 wins_random += 1;
                                 info!("Random won as team {:?}", winner)
+                            } else {
+                                unreachable!("Invalid state")
+                            }
+                        }
+                        Draw => {
+                            draws += 1;
+                            info!("Draw")
+                        }
+                    }
+                }
+                Err(e) => {
+                    error!("Error: {}", e);
+                }
+            }
+
+            if i % 10 == 9 {
+                info!("\n======= STATISTICS =======\nWins minimax: {}\nWins random: {}\nDraws: {}\n==========================", wins_minimax, wins_random, draws);
+            }
+        }
+    }
+
+    #[test]
+    fn test2() {
+        builder().filter_level(log::LevelFilter::Info).init();
+
+        let mut wins_minimax = 0;
+        let mut wins_random = 0;
+        let mut draws = 0;
+
+        for i in 0..10000 {
+            let minimax = MiniMaxAgent::new(10, TicTacToeEvaluator);
+            let random = RandomAgent::new(OsRng::default());
+
+            let mut match_: Match<TicTacToe<3>> = Match::new(minimax, random);
+
+            match match_.playout() {
+                Ok(result) => {
+                    match result.game_result().expect("Game result should be present") {
+                        Winner(winner) => {
+                            match winner {
+                                X => {
+                                    wins_minimax += 1;
+                                    info!("minimax won as team {:?}", winner);
+                                }
+                                O => {
+                                    wins_random += 1;
+                                    info!("random won as team {:?}", winner);
+                                }
                             }
                         }
                         Draw => {
