@@ -1,13 +1,17 @@
 use crate::core::{Agent, Game, MatchError, State};
 use anyhow::Error;
+use log::debug;
 use std::time::{Duration, Instant};
-use log::{debug};
 
 /// Any agent that implements the Agent trait.
 type AnyAgent<G> = Box<dyn Agent<G> + 'static + Send>;
 
 impl<G: Game> Agent<G> for AnyAgent<G> {
-    fn recommend_action(&mut self, state: &G::State, time_limit: Duration) -> Result<G::Action, Error> {
+    fn recommend_action(
+        &mut self,
+        state: &G::State,
+        time_limit: Duration,
+    ) -> Result<G::Action, Error> {
         self.as_mut().recommend_action(state, time_limit)
     }
 }
@@ -46,10 +50,7 @@ impl<G: Game> Match<G> {
 
     /// Sets whether the each action should be checked for validity
     pub fn check_actions(self, check: bool) -> Self {
-        Match {
-            check,
-            ..self
-        }
+        Match { check, ..self }
     }
 
     pub fn with_time_limit(self, time_limit: Duration) -> Self {
@@ -140,7 +141,7 @@ impl<G: Game> Iterator for Match<G> {
                 limit: self.time_limit,
                 time: agent_time,
             }
-                .into()));
+            .into()));
         }
 
         let action = action.unwrap(); // unwrap checked above
@@ -153,14 +154,14 @@ impl<G: Game> Iterator for Match<G> {
                     action,
                     state: self.state.clone(),
                 }
-                    .into()));
+                .into()));
             }
         }
 
         // apply the action to the state, finishing the turn
         self.state = self.state.apply_action(&action);
 
-        debug!("Applied action: {:?}\n{:?}",action, self.state);
+        debug!("Applied action: {:?}\n{:?}", action, self.state);
 
         Some(Ok((old_state, action, self.state.clone())))
     }
@@ -170,16 +171,16 @@ impl<G: Game> Iterator for Match<G> {
 mod tests {
     #![allow(unused_imports)]
     use super::*;
+    use crate::agents::minimax_agent::MiniMaxAgent;
     use crate::agents::random_agent::RandomAgent;
+    use crate::agents::simple_agent::SimpleAgent;
+    use crate::games::counting_game::CountingGameResult::Winner;
     use crate::games::counting_game::CountingTeam::*;
     use crate::games::counting_game::{CountingGame, CountingGameEvaluator};
     use log::*;
     use pretty_env_logger::env_logger::builder;
     use rand::rngs::StdRng;
     use rand::SeedableRng;
-    use crate::agents::minimax_agent::MiniMaxAgent;
-    use crate::agents::simple_agent::SimpleAgent;
-    use crate::games::counting_game::CountingGameResult::Winner;
 
     #[test]
     fn test_match() {
@@ -197,12 +198,10 @@ mod tests {
                 .enforce_time_limit(false);
 
             match match1.playout().unwrap().game_result().unwrap() {
-                Winner(team) => {
-                    match team {
-                        One => { simple_won += 1 }
-                        Two => { rng_won += 1 }
-                    }
-                }
+                Winner(team) => match team {
+                    One => simple_won += 1,
+                    Two => rng_won += 1,
+                },
                 _ => {}
             }
         }

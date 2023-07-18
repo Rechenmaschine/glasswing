@@ -1,7 +1,7 @@
+use crate::core::{Action, Evaluator, Game, GameResult, State, Team};
+use anyhow::Error;
 use std::fmt;
 use std::fmt::Formatter;
-use anyhow::Error;
-use crate::core::{Action, Evaluator, Game, GameResult, State, Team};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 struct TicTacToe<const N: usize>;
@@ -235,9 +235,7 @@ impl<const N: usize> Evaluator<TicTacToe<N>> for TicTacToeEvaluator {
                         Ok(-100.0)
                     }
                 }
-                TicTacToeResult::Draw => {
-                    Ok(0.0)
-                }
+                TicTacToeResult::Draw => Ok(0.0),
             }
         } else {
             // Non-terminal state: return heuristic
@@ -250,17 +248,17 @@ impl<const N: usize> Evaluator<TicTacToe<N>> for TicTacToeEvaluator {
 mod tests {
     #![allow(unused)]
 
-    use std::time::Duration;
-    use log::{info, debug, error, warn, trace};
-    use pretty_env_logger::env_logger::builder;
-    use rand::rngs::OsRng;
+    use super::*;
     use crate::agents::minimax_agent::MiniMaxAgent;
     use crate::agents::random_agent::RandomAgent;
     use crate::agents::simple_agent::SimpleAgent;
     use crate::core::{Agent, Match};
     use crate::games::tic_tac_toe::TicTacToeResult::{Draw, Winner};
-    use crate::games::tic_tac_toe::TicTacToeTeam::{X, O};
-    use super::*;
+    use crate::games::tic_tac_toe::TicTacToeTeam::{O, X};
+    use log::{debug, error, info, trace, warn};
+    use pretty_env_logger::env_logger::builder;
+    use rand::rngs::OsRng;
+    use std::time::Duration;
 
     #[test]
     fn test_terminal_state() {
@@ -270,11 +268,7 @@ mod tests {
         let o = Some(TicTacToeTeam::O);
 
         let state = TicTacToeState {
-            board: [
-                [None, None, None],
-                [None, None, None],
-                [None, None, None],
-            ],
+            board: [[None, None, None], [None, None, None], [None, None, None]],
             turn: 0,
         };
 
@@ -282,11 +276,7 @@ mod tests {
         assert!(!state.is_terminal());
 
         let state = TicTacToeState {
-            board: [
-                [None, None, x],
-                [None, x, None],
-                [x, None, None],
-            ],
+            board: [[None, None, x], [None, x, None], [x, None, None]],
             turn: 0,
         };
 
@@ -294,11 +284,7 @@ mod tests {
         assert!(state.is_terminal());
 
         let state = TicTacToeState {
-            board: [
-                [o, None, o],
-                [None, o, None],
-                [o, None, o],
-            ],
+            board: [[o, None, o], [None, o, None], [o, None, o]],
             turn: 0,
         };
 
@@ -306,11 +292,7 @@ mod tests {
         assert!(state.is_terminal());
 
         let state = TicTacToeState {
-            board: [
-                [x, x, x],
-                [o, o, x],
-                [x, o, o],
-            ],
+            board: [[x, x, x], [o, o, x], [x, o, o]],
             turn: 0,
         };
 
@@ -318,11 +300,7 @@ mod tests {
         assert!(state.is_terminal());
 
         let state = TicTacToeState {
-            board: [
-                [x, x, None],
-                [o, None, None],
-                [x, None, None],
-            ],
+            board: [[x, x, None], [o, None, None], [x, None, None]],
             turn: 0,
         };
 
@@ -333,11 +311,7 @@ mod tests {
         //X  X  O
         //.  O  .
         let state = TicTacToeState {
-            board: [
-                [x, x, o],
-                [x, x, o],
-                [None, o, None],
-            ],
+            board: [[x, x, o], [x, x, o], [None, o, None]],
             turn: 0,
         };
 
@@ -349,11 +323,7 @@ mod tests {
         //O  O  O
 
         let state = TicTacToeState {
-            board: [
-                [x, x, o],
-                [x, x, o],
-                [o, o, o],
-            ],
+            board: [[x, x, o], [x, x, o], [o, o, o]],
             turn: 0,
         };
 
@@ -364,16 +334,10 @@ mod tests {
     #[test]
     fn test_evals() {
         let evaluator = TicTacToeEvaluator;
-        let eval = |state: &TicTacToeState<3>| -> f32 {
-            evaluator.evaluate(state).unwrap()
-        };
+        let eval = |state: &TicTacToeState<3>| -> f32 { evaluator.evaluate(state).unwrap() };
 
         let state = TicTacToeState {
-            board: [
-                [None, None, None],
-                [None, None, None],
-                [None, None, None],
-            ],
+            board: [[None, None, None], [None, None, None], [None, None, None]],
             turn: 0,
         };
 
@@ -424,25 +388,23 @@ mod tests {
             };
 
             match match_.playout() {
-                Ok(result) => {
-                    match result.game_result().expect("Game result should be present") {
-                        Winner(winner) => {
-                            if winner == X && i % 2 == 0 || winner == O && i % 2 == 1 {
-                                wins_minimax += 1;
-                                info!("Minimax won as team {:?}", winner)
-                            } else if winner == O && i % 2 == 0 || winner == X && i % 2 == 1 {
-                                wins_random += 1;
-                                info!("Random won as team {:?}", winner)
-                            } else {
-                                unreachable!("Invalid state")
-                            }
-                        }
-                        Draw => {
-                            draws += 1;
-                            info!("Draw")
+                Ok(result) => match result.game_result().expect("Game result should be present") {
+                    Winner(winner) => {
+                        if winner == X && i % 2 == 0 || winner == O && i % 2 == 1 {
+                            wins_minimax += 1;
+                            info!("Minimax won as team {:?}", winner)
+                        } else if winner == O && i % 2 == 0 || winner == X && i % 2 == 1 {
+                            wins_random += 1;
+                            info!("Random won as team {:?}", winner)
+                        } else {
+                            unreachable!("Invalid state")
                         }
                     }
-                }
+                    Draw => {
+                        draws += 1;
+                        info!("Draw")
+                    }
+                },
                 Err(e) => {
                     error!("Error: {}", e);
                 }
@@ -469,26 +431,22 @@ mod tests {
             let mut match_: Match<TicTacToe<3>> = Match::new(minimax, random);
 
             match match_.playout() {
-                Ok(result) => {
-                    match result.game_result().expect("Game result should be present") {
-                        Winner(winner) => {
-                            match winner {
-                                X => {
-                                    wins_minimax += 1;
-                                    info!("minimax won as team {:?}", winner);
-                                }
-                                O => {
-                                    wins_random += 1;
-                                    info!("random won as team {:?}", winner);
-                                }
-                            }
+                Ok(result) => match result.game_result().expect("Game result should be present") {
+                    Winner(winner) => match winner {
+                        X => {
+                            wins_minimax += 1;
+                            info!("minimax won as team {:?}", winner);
                         }
-                        Draw => {
-                            draws += 1;
-                            info!("Draw")
+                        O => {
+                            wins_random += 1;
+                            info!("random won as team {:?}", winner);
                         }
+                    },
+                    Draw => {
+                        draws += 1;
+                        info!("Draw")
                     }
-                }
+                },
                 Err(e) => {
                     error!("Error: {}", e);
                 }

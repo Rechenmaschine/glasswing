@@ -1,7 +1,7 @@
 use crate::core::traits::*;
 use anyhow::Error;
-use std::time::Duration;
 use log::{debug, trace};
+use std::time::Duration;
 
 use std::marker::PhantomData;
 
@@ -25,7 +25,7 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
         state: &<G as Game>::State,
         depth: u32,
         mut alpha: f32,
-        mut beta: f32
+        mut beta: f32,
     ) -> f32 {
         if depth == 0 || state.is_terminal() {
             return self.evaluator.evaluate(state).unwrap();
@@ -63,7 +63,11 @@ impl<G: Game, E: Evaluator<G>> Agent<G> for MiniMaxAgent<G, E> {
     fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
         let maximizing_player = G::starting_team() == state.team_to_move();
         let mut best_action = None;
-        let mut best_value = if maximizing_player { f32::MIN } else { f32::MAX };
+        let mut best_value = if maximizing_player {
+            f32::MIN
+        } else {
+            f32::MAX
+        };
         let mut alpha = f32::MIN;
         let mut beta = f32::MAX;
 
@@ -73,7 +77,9 @@ impl<G: Game, E: Evaluator<G>> Agent<G> for MiniMaxAgent<G, E> {
 
             trace!("Considering action {:?} with value {}", action, value);
 
-            if (maximizing_player && value > best_value) || (!maximizing_player && value < best_value) {
+            if (maximizing_player && value > best_value)
+                || (!maximizing_player && value < best_value)
+            {
                 best_value = value;
                 best_action = Some(action);
                 if maximizing_player {
