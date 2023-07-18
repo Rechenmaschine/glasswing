@@ -386,12 +386,13 @@ pub trait Team<G: Game<Team = Self>>:
 
     /// Returns the nth team that plays next
     /// If 0 is passed, then the current team is returned.
+    #[inline]
     fn nth(&self, n: isize) -> Self {
-        if n % 2 == 0 {
-            *self
-        } else {
-            self.next()
+        let mut team = *self;
+        for _ in 0..n {
+            team = team.next();
         }
+        team
     }
 
     /// Returns the team that plays the current ply. For example, if the current ply is 1,
