@@ -1,6 +1,7 @@
 use crate::core::{Agent, Game, MatchError, State};
 use anyhow::Error;
 use std::time::{Duration, Instant};
+use log::{debug};
 
 /// Any agent that implements the Agent trait.
 type AnyAgent<G> = Box<dyn Agent<G> + 'static + Send>;
@@ -162,20 +163,24 @@ impl<G: Game> Iterator for Match<G> {
         // apply the action, finishing the turn - INVARIANT IS RESTORED
         self.state = self.state.apply_action(&action);
 
+        debug!("Applied action: {:?}\n{:?}",action, self.state);
+
         Some(Ok((old_state, action, self.state.clone())))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    #![allow(unused_imports)]
     use super::*;
     use crate::agents::random_agent::RandomAgent;
     use crate::games::counting_game::CountingTeam::*;
-    use crate::games::counting_game::{CountingGame};
+    use crate::games::counting_game::{CountingGame, CountingGameEvaluator};
     use log::*;
     use pretty_env_logger::env_logger::builder;
     use rand::rngs::StdRng;
     use rand::SeedableRng;
+    use crate::agents::minimax_agent::MiniMaxAgent;
     use crate::agents::simple_agent::SimpleAgent;
     use crate::games::counting_game::CountingGameResult::Winner;
 
@@ -186,10 +191,10 @@ mod tests {
         let mut simple_won = 0;
         let mut rng_won = 0;
 
-        for _ in 0..2000 {
-            let simple = SimpleAgent::new();
+        for _ in 0..1 {
             let rng = RandomAgent::new(StdRng::from_entropy());
-            let match1 = Match::<CountingGame>::new(simple, rng)
+            let minmax = MiniMaxAgent::new(10, CountingGameEvaluator);
+            let match1 = Match::<CountingGame>::new(minmax, rng)
                 .check_actions(true)
                 .with_time_limit(Duration::ZERO)
                 .enforce_time_limit(false);

@@ -1,7 +1,9 @@
 use crate::core::traits::*;
 use anyhow::Error;
-use std::marker::PhantomData;
 use std::time::Duration;
+use log::{debug, trace};
+
+use std::marker::PhantomData;
 
 pub struct MiniMaxAgent<G: Game, E: Evaluator<G>> {
     depth: u32,
@@ -18,84 +20,71 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
         }
     }
 
-    fn minimax(
-        &self,
+    pub fn minimax(
+        &mut self,
         state: &<G as Game>::State,
         depth: u32,
-        alpha: f32,
-        beta: f32,
-        maximizing_player: bool,
+        mut alpha: f32,
+        mut beta: f32
     ) -> f32 {
-        //TODO: return Result<f32, Error>
         if depth == 0 || state.is_terminal() {
-            return self
-                .evaluator
-                .evaluate(&state.advance_ply())
-                .expect("Evaluation failed");
+            return self.evaluator.evaluate(state).unwrap();
         }
 
-        let mut new_alpha = alpha;
-        let mut new_beta = beta;
+        let maximizing_player = G::starting_team() != state.current_team();
 
         if maximizing_player {
-            let mut max_eval = f32::NEG_INFINITY;
+            let mut value = f32::MIN;
             for action in state.actions() {
-                let child = state.next_state(&action);
-                max_eval = f32::max(
-                    max_eval,
-                    self.minimax(&child, depth - 1, new_alpha, new_beta, false),
-                ) as f32;
-                new_alpha = f32::max(new_alpha, max_eval) as f32;
-                if new_beta <= new_alpha {
-                    break;
+                let new_state = state.next_state(&action);
+                value = value.max(self.minimax(&new_state, depth - 1, alpha, beta));
+                alpha = alpha.max(value);
+                if alpha >= beta {
+                    break; // Beta cut-off
                 }
             }
-            max_eval
+            value
         } else {
-            let mut min_eval = f32::INFINITY;
+            let mut value = f32::MAX;
             for action in state.actions() {
-                let child = state.next_state(&action);
-                min_eval = f32::min(
-                    min_eval,
-                    self.minimax(&child, depth - 1, new_alpha, new_beta, true),
-                ) as f32;
-                new_beta = f32::min(new_beta, min_eval) as f32;
-                if new_beta <= new_alpha {
-                    break;
+                let new_state = state.next_state(&action);
+                value = value.min(self.minimax(&new_state, depth - 1, alpha, beta));
+                beta = beta.min(value);
+                if beta <= alpha {
+                    break; // Alpha cut-off
                 }
             }
-            min_eval
+            value
         }
     }
 }
 
 impl<G: Game, E: Evaluator<G>> Agent<G> for MiniMaxAgent<G, E> {
     fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
-        // By convention, the maximizing player is the starting team
         let maximizing_player = G::starting_team() == state.current_team();
-
-        let mut best_eval = if maximizing_player {
-            f32::NEG_INFINITY
-        } else {
-            f32::INFINITY
-        };
         let mut best_action = None;
+        let mut best_value = if maximizing_player { f32::MIN } else { f32::MAX };
+        let mut alpha = f32::MIN;
+        let mut beta = f32::MAX;
 
         for action in state.actions() {
-            let child = state.next_state(&action);
-            let eval = self.minimax(
-                &child,
-                self.depth - 1,
-                f32::NEG_INFINITY,
-                f32::INFINITY,
-                !maximizing_player,
-            );
+            let new_state = state.apply_action(&action);
+            let value = self.minimax(&new_state, self.depth - 1, alpha, beta);
 
-            if (maximizing_player && eval > best_eval) || (!maximizing_player && eval < best_eval) {
-                best_eval = eval;
+            trace!("Considering action {:?} with value {}", action, value);
+
+            if (maximizing_player && value > best_value) || (!maximizing_player && value < best_value) {
+                best_value = value;
                 best_action = Some(action);
+                if maximizing_player {
+                    alpha = alpha.max(best_value);
+                } else {
+                    beta = beta.min(best_value);
+                }
             }
         }
+
+        debug!("Best action: {:?}, eval={}", best_action, best_value);
 
         best_action.ok_or(MatchError::<G>::NoAvailableActions(state.clone()).into())
     }

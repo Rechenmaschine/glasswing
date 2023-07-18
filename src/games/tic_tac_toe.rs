@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fmt::Formatter;
-use crate::core::{Action, Game, GameResult, State, Team};
+use anyhow::Error;
+use crate::core::{Action, Evaluator, Game, GameResult, State, Team};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 struct TicTacToe<const N: usize>;
@@ -25,10 +26,17 @@ impl<const N: usize> Game for TicTacToe<N> {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 struct TicTacToeState<const N: usize> {
     board: [[Option<TicTacToeTeam>; N]; N],
     turn: usize,
+}
+
+// implement Debug for TicTacToeState using display
+impl<const N: usize> fmt::Debug for TicTacToeState<N> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self)
+    }
 }
 
 impl<const N: usize> State<TicTacToe<N>> for TicTacToeState<N> {
@@ -65,15 +73,8 @@ impl<const N: usize> State<TicTacToe<N>> for TicTacToeState<N> {
     }
 
     fn is_terminal(&self) -> bool {
-        // check if all tiles are filled
-        for row in self.board.iter() {
-            for tile in row.iter() {
-                if tile.is_none() {
-                    return false;
-                }
-            }
-        }
-        true
+        // check if turn is greater than number of tiles
+        return self.game_result().is_some();
     }
 
     fn game_result(&self) -> Option<TicTacToeResult> {
@@ -144,16 +145,23 @@ impl<const N: usize> State<TicTacToe<N>> for TicTacToeState<N> {
             }
         }
 
-        if self.is_terminal() {
-            Some(TicTacToeResult::Draw)
-        } else {
-            None
+        // check whether board is full
+        for row in self.board.iter() {
+            for tile in row.iter() {
+                if tile.is_none() {
+                    return None;
+                }
+            }
         }
+        return Some(TicTacToeResult::Draw);
     }
 }
 
 impl<const N: usize> fmt::Display for TicTacToeState<N> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Turn: {}", self.turn)?;
+        // write team
+        writeln!(f, "Team: {:?}", self.current_team())?;
         for row in self.board.iter() {
             for tile in row.iter() {
                 match tile {
@@ -220,6 +228,31 @@ impl<const N: usize> GameResult<TicTacToe<N>> for TicTacToeResult {
     }
 }
 
+// TTT Evaluator
+struct TicTacToeEvaluator;
+
+impl<const N: usize> Evaluator<TicTacToe<N>> for TicTacToeEvaluator {
+    fn evaluate(&self, state: &TicTacToeState<N>) -> Result<f32, Error> {
+        if let Some(result) = state.game_result() {
+            match result {
+                TicTacToeResult::Winner(team) => {
+                    if team == TicTacToeTeam::X {
+                        Ok(100.0)
+                    } else {
+                        Ok(-100.0)
+                    }
+                }
+                TicTacToeResult::Draw => {
+                    Ok(0.0)
+                }
+            }
+        } else {
+            // Non-terminal state: return heuristic
+            Ok(0.0)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(unused)]
@@ -228,53 +261,201 @@ mod tests {
     use log::{info, debug, error, warn, trace};
     use pretty_env_logger::env_logger::builder;
     use rand::rngs::OsRng;
+    use crate::agents::minimax_agent::MiniMaxAgent;
     use crate::agents::random_agent::RandomAgent;
     use crate::agents::simple_agent::SimpleAgent;
-    use crate::core::Match;
+    use crate::core::{Agent, Match};
+    use crate::games::tic_tac_toe::TicTacToeResult::{Draw, Winner};
+    use crate::games::tic_tac_toe::TicTacToeTeam::{X, O};
     use super::*;
 
     #[test]
+    fn test_terminal_state() {
+        type TTT = TicTacToe<3>;
+
+        let x = Some(TicTacToeTeam::X);
+        let o = Some(TicTacToeTeam::O);
+
+        let state = TicTacToeState {
+            board: [
+                [None, None, None],
+                [None, None, None],
+                [None, None, None],
+            ],
+            turn: 0,
+        };
+
+        assert_eq!(state.game_result(), None);
+        assert!(!state.is_terminal());
+
+        let state = TicTacToeState {
+            board: [
+                [None, None, x],
+                [None, x, None],
+                [x, None, None],
+            ],
+            turn: 0,
+        };
+
+        assert_eq!(state.game_result(), Some(Winner(X)));
+        assert!(state.is_terminal());
+
+        let state = TicTacToeState {
+            board: [
+                [o, None, o],
+                [None, o, None],
+                [o, None, o],
+            ],
+            turn: 0,
+        };
+
+        assert_eq!(state.game_result(), Some(Winner(O)));
+        assert!(state.is_terminal());
+
+        let state = TicTacToeState {
+            board: [
+                [x, x, x],
+                [o, o, x],
+                [x, o, o],
+            ],
+            turn: 0,
+        };
+
+        assert_eq!(state.game_result(), Some(Winner(X)));
+        assert!(state.is_terminal());
+
+        let state = TicTacToeState {
+            board: [
+                [x, x, None],
+                [o, None, None],
+                [x, None, None],
+            ],
+            turn: 0,
+        };
+
+        assert_eq!(state.game_result(), None);
+        assert!(!state.is_terminal());
+
+        //X  X  O
+        //X  X  O
+        //.  O  .
+        let state = TicTacToeState {
+            board: [
+                [x, x, o],
+                [x, x, o],
+                [None, o, None],
+            ],
+            turn: 0,
+        };
+
+        assert_eq!(state.game_result(), None);
+        assert!(!state.is_terminal());
+
+        //X  X  O
+        //X  X  O
+        //O  O  O
+
+        let state = TicTacToeState {
+            board: [
+                [x, x, o],
+                [x, x, o],
+                [o, o, o],
+            ],
+            turn: 0,
+        };
+
+        assert_eq!(state.game_result(), Some(Winner(O)));
+        assert!(state.is_terminal());
+    }
+
+    #[test]
+    fn test_evals() {
+        let evaluator = TicTacToeEvaluator;
+        let eval = |state: &TicTacToeState<3>| -> f32 {
+            evaluator.evaluate(state).unwrap()
+        };
+
+        let state = TicTacToeState {
+            board: [
+                [None, None, None],
+                [None, None, None],
+                [None, None, None],
+            ],
+            turn: 0,
+        };
+
+        assert_eq!(eval(&state), 0.0);
+
+        // state where X wins
+        let state = TicTacToeState {
+            board: [
+                [Some(X), Some(X), Some(X)],
+                [Some(O), Some(O), Some(X)],
+                [Some(X), Some(O), Some(O)],
+            ],
+            turn: 9,
+        };
+
+        assert_eq!(eval(&state), 100.0);
+
+        //same state but inverted
+        let state = TicTacToeState {
+            board: [
+                [Some(O), Some(O), Some(O)],
+                [Some(X), Some(X), Some(O)],
+                [Some(O), Some(X), Some(X)],
+            ],
+            turn: 9,
+        };
+
+        assert_eq!(eval(&state), -100.0);
+    }
+
+    #[test]
     fn test() {
-        type TTT = TicTacToe<4>;
-
         // init logger
-        builder().filter_level(log::LevelFilter::Info).init();
+        builder().filter_level(log::LevelFilter::Debug).init();
 
-        let mut wins_a = 0;
-        let mut wins_b = 0;
+        let mut wins_minimax = 0;
+        let mut wins_random = 0;
         let mut draws = 0;
 
-        for i in 0..2000 {
-            let rng1: RandomAgent<TTT, _> = RandomAgent::new(OsRng::default());
-            let rng2: RandomAgent<TTT, _> = RandomAgent::new(OsRng::default());
-            let simp1: SimpleAgent<TTT> = SimpleAgent::new();
-            let simp2: SimpleAgent<TTT> = SimpleAgent::new();
+        for i in 0..10 {
+            let minimax = MiniMaxAgent::new(7, TicTacToeEvaluator);
+            let random = RandomAgent::new(OsRng::default());
 
-            let mut pit: Match<TTT> = Match::new(rng2, rng1)
-                .with_time_limit(Duration::ZERO)
-                .enforce_time_limit(false)
-                .check_actions(true);
+            let mut match_: Match<TicTacToe<10>> = if i % 2 == 0 {
+                Match::new(minimax, random)
+            } else {
+                Match::new(random, minimax)
+            };
 
-            // playout. If draw, print board
-            let result = pit.playout();
-            match result {
-                Ok(res) => {
-                    trace!("{}", res.state());
-                    trace!("{:?}", res.game_result().unwrap());
-
-                    match res.game_result().unwrap() {
-                        TicTacToeResult::Winner(TicTacToeTeam::X) => wins_a += 1,
-                        TicTacToeResult::Winner(TicTacToeTeam::O) => wins_b += 1,
-                        TicTacToeResult::Draw => draws += 1,
+            match match_.playout() {
+                Ok(result) => {
+                    match result.game_result().expect("Game result should be present"){
+                        Winner(winner) => {
+                            if winner == X && i % 2 == 0 || winner == O && i % 2 == 1 {
+                                wins_minimax += 1;
+                                info!("Minimax won as team {:?}", winner)
+                            } else if winner == O && i % 2 == 1 || winner == X && i % 2 == 0 {
+                                wins_random += 1;
+                                info!("Random won as team {:?}", winner)
+                            }
+                        }
+                        Draw => {
+                            draws += 1;
+                            info!("Draw")
+                        }
                     }
                 }
-                Err(err) => {
-                    error!("{:?}", err);
+                Err(e) => {
+                    error!("Error: {}", e);
                 }
             }
-        }
 
-        // print statistics
-        info!("\n======= STATISTICS =======\n\tWins A: {}\n\tWins B: {}\n\tDraws: {}\n==========================", wins_a, wins_b, draws);
+            if i % 10 == 9 {
+                info!("\n======= STATISTICS =======\nWins minimax: {}\nWins random: {}\nDraws: {}\n==========================", wins_minimax, wins_random, draws);
+            }
+        }
     }
 }
