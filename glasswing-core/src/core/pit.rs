@@ -1,11 +1,12 @@
 use crate::core::{Agent, Game, MatchError, State};
 use anyhow::Error;
-use log::debug;
+use log::{debug, trace};
 use std::time::{Duration, Instant};
 
-/// Any agent that implements the Agent trait.
+/// Any type that implements the [`Agent`] trait.
 type AnyAgent<G> = Box<dyn Agent<G> + 'static + Send>;
 
+// Utility implementation make this layer transparent to the user.
 impl<G: Game> Agent<G> for AnyAgent<G> {
     fn recommend_action(
         &mut self,
@@ -16,6 +17,70 @@ impl<G: Game> Agent<G> for AnyAgent<G> {
     }
 }
 
+/// `Match` represents a match of type `G` between two agents playing a game.
+///
+/// The current state of the game is stored in `state`.
+/// `agent1` and `agent2` represent the two agents participating in the game,
+/// where `agent1` plays all even turns, and `agent2` plays all odd turns.
+///
+/// `Match` implements the `Iterator` trait. This allows the game to be
+/// progressed in a step-by-step manner, producing the result of each turn
+/// when iterated over. The item type of the iterator is a `Result` containing
+/// the previous state, the performed action, and the resulting state, or an `Error`.
+/// When the `next()` function is called, it advances the match to the next state,
+/// calling the current player's agent to recommend an action and then applying the action
+/// to the game state, producing the next state. If an error occurs during the
+/// action selection or application, the error is returned and the match is terminated.
+/// As such, any further calls to `next()` will return `None`.
+///
+/// A match can be configured to operate with various options:
+///
+/// * `check`: If this flag is true, each action recommended by an agent is
+/// checked for its validity. If an action is invalid, the game is immediately
+/// terminated with an [`InvalidAction`] error.
+///
+/// * `time_limit`: This sets the soft time limit for each turn. This is the target time
+/// given to each agent for making their move. It does not enforce any hard limit.
+///
+/// * `enforce`: If this flag is true, then the `time_limit` becomes a hard limit. The game
+/// will be terminated with a [`TimeLimitExceeded`] error if an agent exceeds the limit.
+///
+///
+/// [`InvalidAction`]: ../enum.MatchError.html#variant.InvalidAction
+/// [`TimeLimitExceeded`]: ../enum.MatchError.html#variant.TimeLimitExceeded
+///
+///
+/// # Example
+///
+/// ```rust
+/// # use std::time::Duration;
+/// # use glasswing_core::prelude::*;
+/// use game::YourGame;
+///
+/// let game = YourGame::new();
+/// let agent1 = Agent1::new();
+/// let agent2 = Agent2::new();
+/// let mut contest = Match::new(agent1, agent2)
+///     .with_init_state(game.initial_state())
+///     .check_actions(true)
+///     .with_time_limit(Duration::from_secs(5))
+///     .enforce_time_limit(true);
+///
+/// // Step through the game turn by turn.
+/// while let Some(result) = contest.next() {
+///     match result {
+///         Ok((prev_state, action, next_state)) => {
+///             /*...*/
+///         }
+///         Err(e) => {
+///             /*...*/
+///         }
+///     }
+/// }
+///
+/// let result = contest.game_result().expect("Game should have ended");
+/// ```
+///
 pub struct Match<G: Game> {
     agent1: AnyAgent<G>,
     agent2: AnyAgent<G>,
@@ -27,8 +92,25 @@ pub struct Match<G: Game> {
 }
 
 impl<G: Game> Match<G> {
-    /// Create a new match between two agents.
-    /// Agent1 starts the match.
+    /// Create a new match between two agents where `agent1` plays all even turns
+    /// and `agent2` is plays all odd turns.
+    ///
+    /// - `state` is set to the initial state of the game per default. Use
+    /// [`with_init_state`] to set a different initial state.
+    ///
+    /// - `time_limit` is set to `Duration::MAX` per default. Use [`with_time_limit`] to set
+    /// a different time limit.
+    ///
+    /// - `check` is set to `false` per default. Use [`check_actions`] to change this.
+    ///
+    /// - `enforce` is set to `false` per default. Use [`enforce_time_limit`] to change this.
+    ///
+    /// Note that this method boxes the agents, such that they can be of different types.
+    ///
+    /// [`with_init_state`]: #method.with_init_state
+    /// [`with_time_limit`]: #method.with_time_limit
+    /// [`check_actions`]: #method.check_actions
+    /// [`enforce_time_limit`]: #method.enforce_time_limit
     pub fn new(agent1: impl Agent<G> + 'static, agent2: impl Agent<G> + 'static) -> Self {
         let agent1: Box<dyn Agent<G> + 'static + Send> = Box::new(agent1);
         let agent2: Box<dyn Agent<G> + 'static + Send> = Box::new(agent2);
@@ -43,24 +125,48 @@ impl<G: Game> Match<G> {
         }
     }
 
-    /// Sets the initial state of the game
+    /// Initializes the match with a given state.
+    ///
+    /// Note that if the state begins in a non-initial state, `agent1` may not necessarily
+    /// be the first to move since `agent1` is mapped to all even turns and `agent2` is mapped
+    /// to all odd turns.
     pub fn with_init_state(self, state: G::State) -> Self {
         Match { state, ..self }
     }
 
-    /// Sets whether the each action should be checked for validity
+    /// Sets whether the each action should be checked for validity. If
+    /// this option is set, the game checks that each action is valid.
+    /// If the action is invalid, the game is immediately terminated
+    /// with [`InvalidAction`].
+    ///
+    /// Any iteration after encountering an error will return `None`.
+    ///
+    /// [`InvalidAction`]: crate::core::MatchError#InvalidAction
     pub fn check_actions(self, check: bool) -> Self {
         Match { check, ..self }
     }
 
+    /// Sets the soft time limit for each turn. This is the target time
+    /// passed to each agent.
+    ///
+    /// Note that this is a soft limit, and the game will not terminate
+    /// if the time limit is exceeded.
     pub fn with_time_limit(self, time_limit: Duration) -> Self {
         Match { time_limit, ..self }
     }
 
+    /// Sets whether the time limit should be enforced. If this option
+    /// is set, the game will terminate with [`TimeLimitExceeded`] if
+    /// the time limit is exceeded.
+    ///
+    /// Any iteration after encountering an error will return `None`.
+    ///
+    /// [`TimeLimitExceeded`]: crate::core::MatchError#TimeLimitExceeded
     pub fn enforce_time_limit(self, enforce: bool) -> Self {
         Match { enforce, ..self }
     }
 
+    /// Returns the current time limit
     pub fn time_limit(&self) -> Duration {
         self.time_limit
     }
@@ -70,20 +176,19 @@ impl<G: Game> Match<G> {
         &self.state
     }
 
-    /// Returns the first agent
+    /// Returns the first agent, which plays all even turns
     pub fn agent1(&self) -> &(impl Agent<G> + 'static) {
         &self.agent1
     }
 
-    /// Returns the second agent
+    /// Returns the second agent, which plays all odd turns
     pub fn agent2(&self) -> &(impl Agent<G> + 'static) {
         &self.agent2
     }
 
     /// Plays the game to completion, returning the game result or an error
-    /// if the game terminated prematurely
+    /// if the game terminated due to an error.
     pub fn playout(mut self) -> Result<Self, Error> {
-        // while the game is not over or we encounter an error, keep playing
         while let Some(x) = self.next() {
             match x {
                 Ok(_) => (),
@@ -107,10 +212,13 @@ impl<G: Game> Iterator for Match<G> {
     /// Advances the match to the next state, calling each agent in turn
     /// to recommend an action and then yielding the action and resulting state.
     fn next(&mut self) -> Option<Self::Item> {
+
+        // if we encountered an error, the match may not continue
         if self.error {
             return None;
         }
 
+        // if the game is over, the match may not continue
         if self.state.is_terminal() {
             return None;
         }
@@ -128,20 +236,20 @@ impl<G: Game> Iterator for Match<G> {
         let action = player.recommend_action(&self.state, self.time_limit);
         let agent_time = start.elapsed();
 
-        // if agent encountered an error, we need to return the error and stop the contest
+        // if the agent returned an error, the match terminates with an error
         if let Err(err) = action {
             self.error = true;
             return Some(Err(err));
         }
 
-        // Check time limit but only throw error if "enforced"
-        if agent_time > self.time_limit && self.enforce {
+        // Check if the agent exceeded the time limit
+        if self.enforce && agent_time > self.time_limit {
             self.error = true;
             return Some(Err(MatchError::<G>::TimeLimitExceeded {
                 limit: self.time_limit,
                 time: agent_time,
             }
-            .into()));
+                .into()));
         }
 
         let action = action.unwrap(); // unwrap checked above
@@ -154,7 +262,7 @@ impl<G: Game> Iterator for Match<G> {
                     action,
                     state: self.state.clone(),
                 }
-                .into()));
+                    .into()));
             }
         }
 
@@ -170,6 +278,7 @@ impl<G: Game> Iterator for Match<G> {
 #[cfg(test)]
 mod tests {
     #![allow(unused_imports)]
+
     use super::*;
     use crate::agents::minimax_agent::MiniMaxAgent;
     use crate::agents::random_agent::RandomAgent;
