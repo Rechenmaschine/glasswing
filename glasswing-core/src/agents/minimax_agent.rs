@@ -1,9 +1,9 @@
-use crate::core::traits::*;
 use anyhow::Error;
 use log::{debug, trace};
 use std::time::Duration;
 
 use std::marker::PhantomData;
+use crate::core::{Agent, Evaluator, Game, MatchError, State};
 
 pub struct MiniMaxAgent<G: Game, E: Evaluator<G>> {
     depth: u32,
