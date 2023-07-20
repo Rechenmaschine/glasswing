@@ -300,6 +300,11 @@ pub trait State<G: Game<State = Self>>:
     /// **State machine** - This function should only be called in the [StateStage::Await] stage.
     fn actions(&self) -> Vec<G::Action>;
 
+    /// Returns the number of legal actions that can be taken from this state.
+    fn count_actions(&self) -> usize {
+        self.actions().len()
+    }
+
     /// Returns the team whose turn it is to play in the current state. This implementation
     /// should by consistent with [Team::in_ply]
     ///
