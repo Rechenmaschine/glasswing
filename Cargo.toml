@@ -1,9 +1,7 @@
 [workspace]
 
 members = [
-    "glasswing-core",
-    "glasswing-tournament",
-    "glasswing-perft",
+    "glasswing",
 ]
 
 [profile.release]

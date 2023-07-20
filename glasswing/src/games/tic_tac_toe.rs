@@ -250,8 +250,8 @@ mod tests {
     use crate::agents::minimax_agent::MiniMaxAgent;
     use crate::agents::random_agent::RandomAgent;
     use crate::core::Match;
-    use crate::tests::tic_tac_toe::TicTacToeResult::*;
-    use crate::tests::tic_tac_toe::TicTacToeTeam::{O, X};
+    use crate::games::tic_tac_toe::TicTacToeResult::*;
+    use crate::games::tic_tac_toe::TicTacToeTeam::{O, X};
     use log::{error, info};
     use rand::rngs::OsRng;
     //use pretty_env_logger::env_logger::builder;

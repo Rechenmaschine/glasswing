@@ -279,8 +279,8 @@ mod tests {
     use super::*;
     use crate::agents::minimax_agent::MiniMaxAgent;
     use crate::agents::random_agent::RandomAgent;
-    use crate::tests::tic_tac_toe::TicTacToeResult::Winner;
-    use crate::tests::tic_tac_toe::{TicTacToe, TicTacToeEvaluator, TicTacToeTeam};
+    use crate::games::tic_tac_toe::TicTacToeResult::Winner;
+    use crate::games::tic_tac_toe::{TicTacToe, TicTacToeEvaluator, TicTacToeTeam};
     use log::*;
     use rand::rngs::StdRng;
     use rand::SeedableRng;
