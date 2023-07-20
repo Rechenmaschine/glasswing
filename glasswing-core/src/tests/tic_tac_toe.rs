@@ -4,7 +4,7 @@ use std::fmt;
 use std::fmt::Formatter;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-struct TicTacToe<const N: usize>;
+pub struct TicTacToe<const N: usize>;
 
 impl<const N: usize> Game for TicTacToe<N> {
     type State = TicTacToeState<N>;
@@ -27,7 +27,7 @@ impl<const N: usize> Game for TicTacToe<N> {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
-struct TicTacToeState<const N: usize> {
+pub struct TicTacToeState<const N: usize> {
     board: [[Option<TicTacToeTeam>; N]; N],
     turn: usize,
 }
@@ -171,7 +171,7 @@ impl<const N: usize> fmt::Display for TicTacToeState<N> {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-struct TicTacToeAction {
+pub struct TicTacToeAction {
     col: usize,
     row: usize,
 }
@@ -200,7 +200,7 @@ impl<const N: usize> Team<TicTacToe<N>> for TicTacToeTeam {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-enum TicTacToeResult {
+pub enum TicTacToeResult {
     Winner(TicTacToeTeam),
     Draw,
 }
@@ -222,7 +222,7 @@ impl<const N: usize> GameResult<TicTacToe<N>> for TicTacToeResult {
 }
 
 // TTT Evaluator
-struct TicTacToeEvaluator;
+pub struct TicTacToeEvaluator;
 
 impl<const N: usize> Evaluator<TicTacToe<N>> for TicTacToeEvaluator {
     fn evaluate(&self, state: &TicTacToeState<N>) -> Result<f32, Error> {
@@ -246,26 +246,20 @@ impl<const N: usize> Evaluator<TicTacToe<N>> for TicTacToeEvaluator {
 
 #[cfg(test)]
 mod tests {
-    #![allow(unused)]
-
     use super::*;
     use crate::agents::minimax_agent::MiniMaxAgent;
     use crate::agents::random_agent::RandomAgent;
-    use crate::agents::simple_agent::SimpleAgent;
-    use crate::core::{Agent, Match};
-    use crate::games::tic_tac_toe::TicTacToeResult::{Draw, Winner};
-    use crate::games::tic_tac_toe::TicTacToeTeam::{O, X};
-    use log::{debug, error, info, trace, warn};
-    use pretty_env_logger::env_logger::builder;
+    use crate::core::Match;
+    use crate::tests::tic_tac_toe::TicTacToeResult::*;
+    use crate::tests::tic_tac_toe::TicTacToeTeam::{O, X};
+    use log::{error, info};
     use rand::rngs::OsRng;
-    use std::time::Duration;
+    //use pretty_env_logger::env_logger::builder;
 
     #[test]
     fn test_terminal_state() {
-        type TTT = TicTacToe<3>;
-
-        let x = Some(TicTacToeTeam::X);
-        let o = Some(TicTacToeTeam::O);
+        let x = Some(X);
+        let o = Some(O);
 
         let state = TicTacToeState {
             board: [[None, None, None], [None, None, None], [None, None, None]],
@@ -369,19 +363,19 @@ mod tests {
     }
 
     #[test]
-    fn test() {
+    fn test_simple() {
         // init logger
-        builder().filter_level(log::LevelFilter::Debug).init();
+        //builder().filter_level(log::LevelFilter::Debug).init();
 
         let mut wins_minimax = 0;
         let mut wins_random = 0;
         let mut draws = 0;
 
-        for i in 0..10 {
+        for i in 0..100 {
             let minimax = MiniMaxAgent::new(10, TicTacToeEvaluator);
             let random = RandomAgent::new(OsRng::default());
 
-            let mut match_: Match<TicTacToe<3>> = if i % 2 == 0 {
+            let match_: Match<TicTacToe<3>> = if i % 2 == 0 {
                 Match::new(minimax, random)
             } else {
                 Match::new(random, minimax)
@@ -413,22 +407,26 @@ mod tests {
             if i % 10 == 9 {
                 info!("\n======= STATISTICS =======\nWins minimax: {}\nWins random: {}\nDraws: {}\n==========================", wins_minimax, wins_random, draws);
             }
+
+            assert!(wins_minimax + wins_random + draws == i + 1);
+            assert!(wins_random == 0); // minimax should always win
         }
     }
 
     #[test]
-    fn test2() {
-        builder().filter_level(log::LevelFilter::Info).init();
+    fn test_alternating() {
+        // init logger
+        //builder().filter_level(log::LevelFilter::Info).init();
 
         let mut wins_minimax = 0;
         let mut wins_random = 0;
         let mut draws = 0;
 
-        for i in 0..10000 {
+        for i in 0..100 {
             let minimax = MiniMaxAgent::new(10, TicTacToeEvaluator);
             let random = RandomAgent::new(OsRng::default());
 
-            let mut match_: Match<TicTacToe<3>> = Match::new(minimax, random);
+            let match_: Match<TicTacToe<3>> = Match::new(minimax, random);
 
             match match_.playout() {
                 Ok(result) => match result.game_result().expect("Game result should be present") {
@@ -455,6 +453,9 @@ mod tests {
             if i % 10 == 9 {
                 info!("\n======= STATISTICS =======\nWins minimax: {}\nWins random: {}\nDraws: {}\n==========================", wins_minimax, wins_random, draws);
             }
+
+            assert!(wins_minimax + wins_random + draws == i + 1);
+            assert!(wins_random == 0); // minimax should always win
         }
     }
 }

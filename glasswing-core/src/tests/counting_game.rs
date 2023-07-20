@@ -1,4 +1,4 @@
-use crate::core::traits::*;
+use crate::core::{Action, Evaluator, Game, GameResult, State, Team};
 use anyhow::{anyhow, Error};
 
 #[cfg(feature = "serde_support")]
@@ -34,7 +34,6 @@ impl Game for CountingGame {
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum CountingGameResult {
     Winner(CountingTeam),
-    Draw,
 }
 
 #[cfg(feature = "tournaments")]
@@ -54,15 +53,11 @@ impl GameResult<CountingGame> for CountingGameResult {
     fn winner(&self) -> Option<CountingTeam> {
         match self {
             CountingGameResult::Winner(team) => Some(*team),
-            CountingGameResult::Draw => None,
         }
     }
 
     fn is_draw(&self) -> bool {
-        match self {
-            CountingGameResult::Winner(_) => false,
-            CountingGameResult::Draw => true,
-        }
+        false
     }
 }
 
@@ -87,12 +82,6 @@ impl Team<CountingGame> for CountingTeam {
 pub struct CountingState {
     pub(crate) total: u8,
     pub(crate) turn: usize,
-}
-
-impl CountingState {
-    pub fn total(&self) -> u8 {
-        self.total
-    }
 }
 
 impl State<CountingGame> for CountingState {

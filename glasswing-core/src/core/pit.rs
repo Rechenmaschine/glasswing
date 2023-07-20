@@ -1,6 +1,6 @@
 use crate::core::{Agent, Game, MatchError, State};
 use anyhow::Error;
-use log::{debug, trace};
+use log::debug;
 use std::time::{Duration, Instant};
 
 /// Any type that implements the [`Agent`] trait.
@@ -212,7 +212,6 @@ impl<G: Game> Iterator for Match<G> {
     /// Advances the match to the next state, calling each agent in turn
     /// to recommend an action and then yielding the action and resulting state.
     fn next(&mut self) -> Option<Self::Item> {
-
         // if we encountered an error, the match may not continue
         if self.error {
             return None;
@@ -249,7 +248,7 @@ impl<G: Game> Iterator for Match<G> {
                 limit: self.time_limit,
                 time: agent_time,
             }
-                .into()));
+            .into()));
         }
 
         let action = action.unwrap(); // unwrap checked above
@@ -262,7 +261,7 @@ impl<G: Game> Iterator for Match<G> {
                     action,
                     state: self.state.clone(),
                 }
-                    .into()));
+                .into()));
             }
         }
 
@@ -277,39 +276,41 @@ impl<G: Game> Iterator for Match<G> {
 
 #[cfg(test)]
 mod tests {
-    #![allow(unused_imports)]
-
     use super::*;
     use crate::agents::minimax_agent::MiniMaxAgent;
     use crate::agents::random_agent::RandomAgent;
-    use crate::agents::simple_agent::SimpleAgent;
-    use crate::games::counting_game::CountingGameResult::Winner;
-    use crate::games::counting_game::CountingTeam::*;
-    use crate::games::counting_game::{CountingGame, CountingGameEvaluator};
+    use crate::tests::tic_tac_toe::TicTacToeResult::Winner;
+    use crate::tests::tic_tac_toe::{TicTacToe, TicTacToeEvaluator, TicTacToeTeam};
     use log::*;
-    use pretty_env_logger::env_logger::builder;
     use rand::rngs::StdRng;
     use rand::SeedableRng;
+    //use pretty_env_logger::env_logger::builder;
 
     #[test]
     fn test_match() {
-        builder().filter_level(LevelFilter::Trace).init();
+        //builder().filter_level(LevelFilter::Trace).init();
+
+        type TTT = TicTacToe<3>;
 
         let mut simple_won = 0;
         let mut rng_won = 0;
 
         for _ in 0..1 {
             let rng = RandomAgent::new(StdRng::from_entropy());
-            let minmax = MiniMaxAgent::new(10, CountingGameEvaluator);
-            let match1 = Match::<CountingGame>::new(minmax, rng)
+            let minmax = MiniMaxAgent::new(10, TicTacToeEvaluator);
+            let match1 = Match::<TTT>::new(minmax, rng)
                 .check_actions(true)
                 .with_time_limit(Duration::ZERO)
                 .enforce_time_limit(false);
 
             match match1.playout().unwrap().game_result().unwrap() {
                 Winner(team) => match team {
-                    One => simple_won += 1,
-                    Two => rng_won += 1,
+                    TicTacToeTeam::X => {
+                        simple_won += 1;
+                    }
+                    TicTacToeTeam::O => {
+                        rng_won += 1;
+                    }
                 },
                 _ => {}
             }

@@ -5,3 +5,6 @@ pub mod prelude {
     pub use crate::agents::*;
     pub use crate::core::*;
 }
+
+#[cfg(test)]
+mod tests;

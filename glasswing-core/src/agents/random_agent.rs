@@ -1,10 +1,10 @@
+use crate::core::{Agent, Game, State};
 use anyhow::Error;
 use rand::prelude::ThreadRng;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use std::marker::PhantomData;
 use std::time::Duration;
-use crate::core::{Agent, Game, State};
 
 pub struct RandomAgent<G: Game, R: Rng> {
     rng: R,
