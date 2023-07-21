@@ -2,95 +2,66 @@ use anyhow::Error;
 use log::{debug, trace};
 use std::time::Duration;
 
-use crate::core::{Agent, Evaluator, Game, MatchError, Polarity, State, Team};
+use crate::core::{Agent, Evaluator, Game, MatchError, State, Team};
 use std::marker::PhantomData;
 
-pub struct MiniMaxAgent<G: Game, E: Evaluator<G>> {
+pub struct NegaMaxAgent<G: Game, E: Evaluator<G>> {
     depth: u32,
     evaluator: E,
     _game: PhantomData<G>,
 }
 
-impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
+impl<G: Game, E: Evaluator<G>> NegaMaxAgent<G, E> {
     pub fn new(depth: u32, evaluator: E) -> Self {
-        MiniMaxAgent {
+        NegaMaxAgent {
             depth,
             evaluator,
             _game: PhantomData,
         }
     }
 
-    pub fn minimax(
+    pub fn negamax(
         &mut self,
         state: &<G as Game>::State,
         depth: u32,
         mut alpha: f32,
-        mut beta: f32,
+        beta: f32,
     ) -> f32 {
         if depth == 0 || state.is_terminal() {
-            return self.evaluator.evaluate(state).unwrap();
+            return self.evaluator.evaluate(state).unwrap() * state.team_to_move().polarity().sign() as f32;
         }
 
-        let maximizing_player = if state.team_to_move().polarity() == Polarity::Positive {
-            true
-        } else {
-            false
-        };
-
-        if maximizing_player {
-            let mut value = f32::MIN;
-            for action in state.actions() {
-                let new_state = state.apply_action(&action);
-                value = value.max(self.minimax(&new_state, depth - 1, alpha, beta));
-                alpha = alpha.max(value);
-                if alpha >= beta {
-                    break; // Beta cut-off
-                }
+        let mut value = f32::MIN;
+        for action in state.actions() {
+            let new_state = state.apply_action(&action);
+            let score = -self.negamax(&new_state, depth - 1, -beta, -alpha);
+            value = value.max(score);
+            alpha = alpha.max(score);
+            if alpha >= beta {
+                break; // Beta cut-off
             }
-            value
-        } else {
-            let mut value = f32::MAX;
-            for action in state.actions() {
-                let new_state = state.apply_action(&action);
-                value = value.min(self.minimax(&new_state, depth - 1, alpha, beta));
-                beta = beta.min(value);
-                if beta <= alpha {
-                    break; // Alpha cut-off
-                }
-            }
-            value
         }
+        value
     }
 }
 
-impl<G: Game, E: Evaluator<G>> Agent<G> for MiniMaxAgent<G, E> {
+impl<G: Game, E: Evaluator<G>> Agent<G> for NegaMaxAgent<G, E> {
     fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
-        let maximizing_player = G::starting_team() == state.team_to_move();
         let mut best_action = None;
-        let mut best_value = if maximizing_player {
-            f32::MIN
-        } else {
-            f32::MAX
-        };
+        let mut best_value = f32::MIN;
         let mut alpha = f32::MIN;
-        let mut beta = f32::MAX;
+        let beta = f32::MAX;
 
         for action in state.actions() {
             let new_state = state.apply_action(&action);
-            let value = self.minimax(&new_state, self.depth - 1, alpha, beta);
+            let value = -self.negamax(&new_state, self.depth - 1, -beta, -alpha);
 
             trace!("Considering action {:?} with value {}", action, value);
 
-            if (maximizing_player && value > best_value)
-                || (!maximizing_player && value < best_value)
-            {
+            if value > best_value {
                 best_value = value;
                 best_action = Some(action);
-                if maximizing_player {
-                    alpha = alpha.max(best_value);
-                } else {
-                    beta = beta.min(best_value);
-                }
+                alpha = alpha.max(best_value);
             }
         }
 
@@ -123,7 +94,7 @@ mod tests {
         let mut draws = 0;
 
         for i in 0..100 {
-            let minimax = MiniMaxAgent::new(10, TicTacToeEvaluator);
+            let minimax = NegaMaxAgent::new(10, TicTacToeEvaluator);
             let random = RandomAgent::new(OsRng::default());
 
             let match_: Match<TicTacToe<3>> = if i % 2 == 0 {
@@ -174,7 +145,7 @@ mod tests {
         let mut draws = 0;
 
         for i in 0..100 {
-            let minimax = MiniMaxAgent::new(10, TicTacToeEvaluator);
+            let minimax = NegaMaxAgent::new(10, TicTacToeEvaluator);
             let random = RandomAgent::new(OsRng::default());
 
             let match_: Match<TicTacToe<3>> = Match::new(minimax, random);

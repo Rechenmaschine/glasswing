@@ -1,4 +1,4 @@
-use crate::core::{Action, Evaluator, Game, GameResult, State, Team};
+use crate::core::{Action, Evaluator, Game, GameResult, Polarity, State, Team};
 use anyhow::Error;
 use std::fmt;
 use std::fmt::Formatter;
@@ -197,6 +197,13 @@ impl<const N: usize> Team<TicTacToe<N>> for TicTacToeTeam {
             TicTacToeTeam::O => TicTacToeTeam::X,
         }
     }
+
+    fn polarity(&self) -> Polarity {
+        match self {
+            TicTacToeTeam::X => Polarity::Positive,
+            TicTacToeTeam::O => Polarity::Negative,
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -247,13 +254,8 @@ impl<const N: usize> Evaluator<TicTacToe<N>> for TicTacToeEvaluator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::agents::minimax_agent::MiniMaxAgent;
-    use crate::agents::random_agent::RandomAgent;
-    use crate::core::Match;
     use crate::games::tic_tac_toe::TicTacToeResult::*;
     use crate::games::tic_tac_toe::TicTacToeTeam::{O, X};
-    use log::{error, info};
-    use rand::rngs::OsRng;
     //use pretty_env_logger::env_logger::builder;
 
     #[test]
@@ -360,102 +362,5 @@ mod tests {
         };
 
         assert_eq!(eval(&state), -100.0);
-    }
-
-    #[test]
-    fn test_simple() {
-        // init logger
-        //builder().filter_level(log::LevelFilter::Debug).init();
-
-        let mut wins_minimax = 0;
-        let mut wins_random = 0;
-        let mut draws = 0;
-
-        for i in 0..100 {
-            let minimax = MiniMaxAgent::new(10, TicTacToeEvaluator);
-            let random = RandomAgent::new(OsRng::default());
-
-            let match_: Match<TicTacToe<3>> = if i % 2 == 0 {
-                Match::new(minimax, random)
-            } else {
-                Match::new(random, minimax)
-            };
-
-            match match_.playout() {
-                Ok(result) => match result.game_result().expect("Game result should be present") {
-                    Winner(winner) => {
-                        if winner == X && i % 2 == 0 || winner == O && i % 2 == 1 {
-                            wins_minimax += 1;
-                            info!("Minimax won as team {:?}", winner)
-                        } else if winner == O && i % 2 == 0 || winner == X && i % 2 == 1 {
-                            wins_random += 1;
-                            info!("Random won as team {:?}", winner)
-                        } else {
-                            unreachable!("Invalid state")
-                        }
-                    }
-                    Draw => {
-                        draws += 1;
-                        info!("Draw")
-                    }
-                },
-                Err(e) => {
-                    error!("Error: {}", e);
-                }
-            }
-
-            if i % 10 == 9 {
-                info!("\n======= STATISTICS =======\nWins minimax: {}\nWins random: {}\nDraws: {}\n==========================", wins_minimax, wins_random, draws);
-            }
-
-            assert!(wins_minimax + wins_random + draws == i + 1);
-            assert!(wins_random == 0); // minimax should always win
-        }
-    }
-
-    #[test]
-    fn test_alternating() {
-        // init logger
-        //builder().filter_level(log::LevelFilter::Info).init();
-
-        let mut wins_minimax = 0;
-        let mut wins_random = 0;
-        let mut draws = 0;
-
-        for i in 0..100 {
-            let minimax = MiniMaxAgent::new(10, TicTacToeEvaluator);
-            let random = RandomAgent::new(OsRng::default());
-
-            let match_: Match<TicTacToe<3>> = Match::new(minimax, random);
-
-            match match_.playout() {
-                Ok(result) => match result.game_result().expect("Game result should be present") {
-                    Winner(winner) => match winner {
-                        X => {
-                            wins_minimax += 1;
-                            info!("minimax won as team {:?}", winner);
-                        }
-                        O => {
-                            wins_random += 1;
-                            info!("random won as team {:?}", winner);
-                        }
-                    },
-                    Draw => {
-                        draws += 1;
-                        info!("Draw")
-                    }
-                },
-                Err(e) => {
-                    error!("Error: {}", e);
-                }
-            }
-
-            if i % 10 == 9 {
-                info!("\n======= STATISTICS =======\nWins minimax: {}\nWins random: {}\nDraws: {}\n==========================", wins_minimax, wins_random, draws);
-            }
-
-            assert!(wins_minimax + wins_random + draws == i + 1);
-            assert!(wins_random == 0); // minimax should always win
-        }
     }
 }

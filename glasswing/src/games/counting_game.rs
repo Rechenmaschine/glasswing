@@ -1,4 +1,4 @@
-use crate::core::{Action, Evaluator, Game, GameResult, State, Team};
+use crate::core::{Action, Evaluator, Game, GameResult, Polarity, State, Team};
 use anyhow::{anyhow, Error};
 
 #[cfg(feature = "serde_support")]
@@ -57,6 +57,13 @@ impl Team<CountingGame> for CountingTeam {
         match self {
             CountingTeam::One => CountingTeam::Two,
             CountingTeam::Two => CountingTeam::One,
+        }
+    }
+
+    fn polarity(&self) -> Polarity {
+        match self {
+            CountingTeam::One => Polarity::Positive,
+            CountingTeam::Two => Polarity::Negative,
         }
     }
 }

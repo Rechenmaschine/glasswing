@@ -1,6 +1,7 @@
 pub mod minimax_agent;
 pub mod random_agent;
 pub mod simple_agent;
+pub mod negamax_agent;
 
 pub use minimax_agent::*;
 pub use random_agent::*;

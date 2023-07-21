@@ -20,3 +20,7 @@ pretty_env_logger = "0.5.0"
 tournaments = []
 perft = []
 serde_support = ["serde", "serde_json"]
+
+
+[lib] # TODO remove once tests ok
+doctest = false

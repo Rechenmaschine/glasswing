@@ -204,7 +204,7 @@ pub trait Game: Sized + Debug + Send + Sync + SerializeAlias + DeserializeAlias 
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
 pub trait GameResult<G: Game>:
-    Clone + Debug + Send + Sync + SerializeAlias + DeserializeAlias
+Clone + Debug + Send + Sync + SerializeAlias + DeserializeAlias
 {
     /// The winner of the game
     fn winner(&self) -> Option<G::Team>;
@@ -266,8 +266,8 @@ pub trait GameResult<G: Game>:
 /// ```
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
-pub trait State<G: Game<State = Self>>:
-    Clone + Debug + Sync + Send + SerializeAlias + DeserializeAlias
+pub trait State<G: Game<State=Self>>:
+Clone + Debug + Sync + Send + SerializeAlias + DeserializeAlias
 {
     /// Returns true, if the provided action is legal in the current state
     /// By default, this function checks if the action is in the list of legal actions
@@ -328,6 +328,31 @@ pub trait State<G: Game<State = Self>>:
     fn game_result(&self) -> Option<G::GameResult>;
 }
 
+/// Polarity is used to represent the evaluation direction according to the current player.
+/// A positive polarity means that the current player is maximizing the evaluation, while a
+/// negative polarity indicates that the current player is minimizing the evaluation.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum Polarity {
+    Positive = 1,
+    Negative = -1,
+}
+
+impl Polarity {
+    pub fn flip(&self) -> Self {
+        match self {
+            Polarity::Positive => Polarity::Negative,
+            Polarity::Negative => Polarity::Positive,
+        }
+    }
+
+    pub fn sign(&self) -> i32 {
+        match self {
+            Polarity::Positive => 1,
+            Polarity::Negative => -1,
+        }
+    }
+}
+
 /// The `Team` trait encapsulates the concept of a team or a player in a two-player game.
 ///
 /// Implementations of this trait will differ based on the specifics of the game,
@@ -366,11 +391,16 @@ pub trait State<G: Game<State = Self>>:
 /// ```
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
-pub trait Team<G: Game<Team = Self>>:
-    Copy + Clone + Debug + Eq + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
+pub trait Team<G: Game<Team=Self>>:
+Copy + Clone + Debug + Eq + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
 {
     /// In the total order of teams, return the team after this one
     fn next(&self) -> Self;
+
+    /// Returns the evaluation polarity of the team.
+    /// A positive polarity means that the team is maximizing the evaluation, while a
+    /// negative polarity indicates that the team is minimizing the evaluation.
+    fn polarity(&self) -> Polarity;
 
     /// Returns the nth team that plays next
     /// If 0 is passed, then the current team is returned.
@@ -414,7 +444,6 @@ pub trait Team<G: Game<Team = Self>>:
 /// ```
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
-pub trait Action<G: Game<Action = Self>>:
-    Clone + Debug + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
-{
-}
+pub trait Action<G: Game<Action=Self>>:
+Clone + Debug + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
+{}
