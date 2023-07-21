@@ -1,4 +1,5 @@
 pub mod pit;
+pub mod serialization;
 pub mod traits;
 //pub mod game_history;
 

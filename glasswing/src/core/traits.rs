@@ -1,23 +1,8 @@
+use crate::core::serialization::{DeserializeAlias, SerializeAlias};
 use anyhow::Error;
 use std::fmt::Debug;
 use std::time::Duration;
 use thiserror::Error;
-
-// The `DeserializeOwnedAlias` and `SerializeAlias` traits provide conditional
-// serde support for serializing and deserializing objects. If the feature "serde_support" is
-// enabled, they refer to serde's `DeserializeOwned` and `Serialize` traits, otherwise they refer
-// to [std::any::Any].
-#[cfg(feature = "serde_support")]
-use serde::{de::DeserializeOwned as DeserializeOwnedAlias, ser::Serialize as SerializeAlias};
-
-#[cfg(not(feature = "serde_support"))]
-use std::any::{Any as DeserializeOwnedAlias, Any as SerializeAlias};
-
-#[cfg(feature = "tournaments")]
-use tournament_rs::prelude::MatchResult as TournamentMatchResultAlias;
-
-#[cfg(not(feature = "tournaments"))]
-use std::any::Any as TournamentMatchResultAlias;
 
 #[derive(Error, Debug)]
 pub enum MatchError<G: Game> {
@@ -157,10 +142,8 @@ pub trait Evaluator<G: Game>: Send + Sync {
 /// }
 /// ```
 ///
-/// Note: `SerializeAlias` and `DeserializeOwnedAlias` are used for serialization and deserialization support.
-pub trait Game:
-    Sized + Debug + Send + Sync + SerializeAlias + DeserializeOwnedAlias + 'static
-{
+/// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
+pub trait Game: Sized + Debug + Send + Sync + SerializeAlias + DeserializeAlias + 'static {
     /// The type representing the state of the game. This could include the positions of
     /// all pieces in a chess game, the value of all cards in a card game, etc.
     type State: State<Self>;
@@ -219,9 +202,9 @@ pub trait Game:
 /// }
 /// ```
 ///
-/// Note: `SerializeAlias` and `DeserializeOwnedAlias` are used for serialization and deserialization support.
+/// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
 pub trait GameResult<G: Game>:
-    Clone + Debug + Send + Sync + SerializeAlias + DeserializeOwnedAlias + TournamentMatchResultAlias
+    Clone + Debug + Send + Sync + SerializeAlias + DeserializeAlias
 {
     /// The winner of the game
     fn winner(&self) -> Option<G::Team>;
@@ -282,9 +265,9 @@ pub trait GameResult<G: Game>:
 /// }
 /// ```
 ///
-/// Note: `SerializeAlias` and `DeserializeOwnedAlias` are used for serialization and deserialization support.
+/// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
 pub trait State<G: Game<State = Self>>:
-    Clone + Debug + Sync + Send + SerializeAlias + DeserializeOwnedAlias
+    Clone + Debug + Sync + Send + SerializeAlias + DeserializeAlias
 {
     /// Returns true, if the provided action is legal in the current state
     /// By default, this function checks if the action is in the list of legal actions
@@ -382,9 +365,9 @@ pub trait State<G: Game<State = Self>>:
 /// }
 /// ```
 ///
-/// Note: `SerializeAlias` and `DeserializeOwnedAlias` are used for serialization and deserialization support.
+/// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
 pub trait Team<G: Game<Team = Self>>:
-    Copy + Clone + Debug + Eq + PartialEq + Send + Sync + SerializeAlias + DeserializeOwnedAlias
+    Copy + Clone + Debug + Eq + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
 {
     /// In the total order of teams, return the team after this one
     fn next(&self) -> Self;
@@ -430,8 +413,8 @@ pub trait Team<G: Game<Team = Self>>:
 /// impl Action<Chess> for ChessMove { /*...*/ }
 /// ```
 ///
-/// Note: `SerializeAlias` and `DeserializeOwnedAlias` are used for serialization and deserialization support.
+/// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
 pub trait Action<G: Game<Action = Self>>:
-    Clone + Debug + PartialEq + Send + Sync + SerializeAlias + DeserializeOwnedAlias
+    Clone + Debug + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
 {
 }

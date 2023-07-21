@@ -4,9 +4,6 @@ use anyhow::{anyhow, Error};
 #[cfg(feature = "serde_support")]
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "tournaments")]
-use tournament_rs::game::{MatchResult, Outcome};
-
 /// A game, where each player can add 0, 1 or 2 to a total. The player who counts to 21 first, wins.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
@@ -34,19 +31,6 @@ impl Game for CountingGame {
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum CountingGameResult {
     Winner(CountingTeam),
-}
-
-#[cfg(feature = "tournaments")]
-impl MatchResult for CountingGameResult {
-    fn outcome(&self) -> Outcome {
-        match self.winner() {
-            None => Outcome::Draw,
-            Some(winner) => match winner {
-                CountingTeam::One => Outcome::WinP1,
-                CountingTeam::Two => Outcome::WinP2,
-            },
-        }
-    }
 }
 
 impl GameResult<CountingGame> for CountingGameResult {
