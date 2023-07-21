@@ -333,11 +333,16 @@ Clone + Debug + Sync + Send + SerializeAlias + DeserializeAlias
 /// negative polarity indicates that the current player is minimizing the evaluation.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Polarity {
+    /// Positive polarity indicates the player is **maximizing** the evaluation.
     Positive = 1,
+    /// Negative polarity indicates the player is **minimizing** the evaluation.
     Negative = -1,
 }
 
 impl Polarity {
+    /// Returns the opposite of the current `Polarity`.
+    ///
+    /// If the current instance is `Positive`, it returns `Negative`, and vice versa.
     pub fn flip(&self) -> Self {
         match self {
             Polarity::Positive => Polarity::Negative,
@@ -345,6 +350,9 @@ impl Polarity {
         }
     }
 
+    /// Returns the sign of the `Polarity` as an `i32`.
+    ///
+    /// This method returns `1` for `Positive` and `-1` for `Negative`.
     pub fn sign(&self) -> i32 {
         match self {
             Polarity::Positive => 1,
