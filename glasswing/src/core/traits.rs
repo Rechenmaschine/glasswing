@@ -209,11 +209,6 @@ Clone + Debug + Send + Sync + SerializeAlias + DeserializeAlias
     /// The winner of the game
     fn winner(&self) -> Option<G::Team>;
 
-    /// The loser of the game
-    fn loser(&self) -> Option<G::Team> {
-        self.winner().map(|t| t.next())
-    }
-
     /// Returns true, if the game is a draw
     fn is_draw(&self) -> bool;
 }
@@ -413,7 +408,7 @@ Copy + Clone + Debug + Eq + PartialEq + Send + Sync + SerializeAlias + Deseriali
     /// Returns the nth team that plays next
     /// If 0 is passed, then the current team is returned.
     #[inline]
-    fn nth(&self, n: isize) -> Self {
+    fn nth(&self, n: usize) -> Self {
         let mut team = *self;
         for _ in 0..n {
             team = team.next();
@@ -424,7 +419,7 @@ Copy + Clone + Debug + Eq + PartialEq + Send + Sync + SerializeAlias + Deseriali
     /// Returns the team that plays the current ply. For example, if the current ply is 1,
     /// then the starting team plays. If the current ply is 2, then the team after that plays.
     fn in_turn(turn: usize) -> Self {
-        G::starting_team().nth(turn as isize)
+        G::starting_team().nth(turn)
     }
 }
 
