@@ -1,8 +1,11 @@
 #[cfg(feature = "serde_support")]
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 #[cfg(feature = "serde_support")]
-pub use Serialize as SerializeAlias;
+pub trait SerializeAlias: Serialize {}
+
+#[cfg(feature = "serde_support")]
+impl<T> SerializeAlias for T where T: Serialize {}
 
 #[cfg(not(feature = "serde_support"))]
 pub trait SerializeAlias {}
@@ -11,7 +14,10 @@ pub trait SerializeAlias {}
 impl<T> SerializeAlias for T {}
 
 #[cfg(feature = "serde_support")]
-pub use DeserializeOwned as DeserializeAlias;
+pub trait DeserializeAlias: DeserializeOwned {}
+
+#[cfg(feature = "serde_support")]
+impl<T> DeserializeAlias for T where T: DeserializeOwned {}
 
 #[cfg(not(feature = "serde_support"))]
 pub trait DeserializeAlias {}

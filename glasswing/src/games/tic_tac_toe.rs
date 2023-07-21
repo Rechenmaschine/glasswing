@@ -2,6 +2,7 @@ use crate::core::{Action, Evaluator, Game, GameResult, Polarity, State, Team};
 use anyhow::Error;
 use std::fmt;
 use std::fmt::Formatter;
+use std::hash::{Hash, Hasher};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct TicTacToe<const N: usize>;
@@ -251,11 +252,46 @@ impl<const N: usize> Evaluator<TicTacToe<N>> for TicTacToeEvaluator {
     }
 }
 
+//impl hash for TicTacToeState {
+impl<const N: usize> Hash for TicTacToeState<N> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let mut hash = 0;
+        let mut bit_count = 0u8;
+        for row in self.board.iter() {
+            for tile in row.iter() {
+                match tile {
+                    Some(TicTacToeTeam::X) => {
+                        hash = hash << 2;
+                        hash += 3;
+                        bit_count += 2;
+                    }
+                    Some(TicTacToeTeam::O) => {
+                        hash = hash << 2;
+                        hash += 2;
+                        bit_count += 2;
+                    }
+                    None => {
+                        hash = hash << 2;
+                        bit_count += 2;
+                    }
+                }
+                if bit_count == 64 {
+                    state.write_u64(hash);
+                    hash = 0;
+                    bit_count = 0;
+                }
+            }
+        }
+        state.write_u64(hash);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::games::tic_tac_toe::TicTacToeResult::*;
     use crate::games::tic_tac_toe::TicTacToeTeam::{O, X};
+    use crate::perft;
     //use pretty_env_logger::env_logger::builder;
 
     #[test]
@@ -362,5 +398,16 @@ mod tests {
         };
 
         assert_eq!(eval(&state), -100.0);
+    }
+
+    #[test]
+    fn perft() {
+        type TTT = TicTacToe<3>;
+
+        let state = TTT::initial_state();
+        let rs = perft::perft::<TTT>(&state, 9, 5);
+        assert_eq!(rs.nodes(), 255_168);
+
+        println!("TicTacToe<3> Perft(9) finished in {:.2}s -- Throughput: {}", rs.time().as_secs_f64(), rs.nps());
     }
 }

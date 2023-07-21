@@ -1,10 +1,11 @@
 pub mod agents;
 pub mod core;
 
-#[cfg(tournaments)]
+/// Collection of tournament implementations.
+#[cfg(feature = "tournaments")]
 pub mod tournaments;
 
-#[cfg(perft)]
+/// Perft functions
 pub mod perft;
 
 pub mod prelude {
