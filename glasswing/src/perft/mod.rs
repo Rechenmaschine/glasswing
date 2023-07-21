@@ -1,12 +1,12 @@
 mod transposition;
 
-use std::ops::Range;
-use std::time::Instant;
-use std::time::Duration;
+use crate::core::{Game, State};
 use std::fmt;
 use std::hash::Hash;
+use std::ops::Range;
+use std::time::Duration;
+use std::time::Instant;
 use transposition::TranspositionTable;
-use crate::core::{Game, State};
 
 pub struct PerftResult {
     depth: u32,
@@ -31,7 +31,6 @@ impl PerftResult {
         Nps(self.nodes, self.time)
     }
 }
-
 
 pub struct Nps(usize, Duration);
 
@@ -72,8 +71,14 @@ impl fmt::Display for Nps {
     }
 }
 
-pub fn incremental_perft<G: Game, F: Fn(u32) -> u32>(state: &G::State, range: Range<u32>, table_depth: F) -> Vec<PerftResult>
-    where G::State: Hash + Eq {
+pub fn incremental_perft<G: Game, F: Fn(u32) -> u32>(
+    state: &G::State,
+    range: Range<u32>,
+    table_depth: F,
+) -> Vec<PerftResult>
+where
+    G::State: Hash + Eq,
+{
     let mut vec = vec![];
     for i in range {
         let tr_depth = table_depth(i);
@@ -84,7 +89,8 @@ pub fn incremental_perft<G: Game, F: Fn(u32) -> u32>(state: &G::State, range: Ra
 }
 
 pub fn perft<G: Game>(state: &G::State, depth: u32, tr_depth: u32) -> PerftResult
-    where G::State: Hash + Eq
+where
+    G::State: Hash + Eq,
 {
     if depth == 0 {
         PerftResult {
@@ -105,8 +111,14 @@ pub fn perft<G: Game>(state: &G::State, depth: u32, tr_depth: u32) -> PerftResul
     }
 }
 
-fn perft_recursive<G: Game>(tr: &mut TranspositionTable<G>, state: &G::State, depth: u32, tr_depth: u32) -> usize
-    where G::State: Hash + Eq
+fn perft_recursive<G: Game>(
+    tr: &mut TranspositionTable<G>,
+    state: &G::State,
+    depth: u32,
+    tr_depth: u32,
+) -> usize
+where
+    G::State: Hash + Eq,
 {
     if state.is_terminal() {
         return 1;
@@ -122,7 +134,8 @@ fn perft_recursive<G: Game>(tr: &mut TranspositionTable<G>, state: &G::State, de
     for action in actions {
         let new_state = state.apply_action(&action);
 
-        let child_nodes = if tr_depth == 0 { // then dont use TR
+        let child_nodes = if tr_depth == 0 {
+            // then dont use TR
             perft_recursive::<G>(tr, &new_state, depth - 1, 0)
         } else {
             if let Some(child_nodes) = tr.get(&new_state) {

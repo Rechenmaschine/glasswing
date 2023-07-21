@@ -1,19 +1,21 @@
+use crate::core::Game;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
-use crate::core::Game;
 
 /// A simple transposition table that stores the perft value for a given state.
 /// This implementation does not store the state itself for speed and space
 /// efficiency, so keep in mind that hash collisions are possible.
 pub struct TranspositionTable<G: Game>
-    where G::State: Hash + Eq
+where
+    G::State: Hash + Eq,
 {
     table: HashMap<u64, usize>,
     phantom: std::marker::PhantomData<G>,
 }
 
 impl<G: Game> TranspositionTable<G>
-    where G::State: Hash + Eq
+where
+    G::State: Hash + Eq,
 {
     pub fn new() -> Self {
         TranspositionTable {
@@ -44,9 +46,7 @@ struct DirectHasher {
 
 impl DirectHasher {
     fn new() -> Self {
-        DirectHasher {
-            value: 0,
-        }
+        DirectHasher { value: 0 }
     }
 }
 

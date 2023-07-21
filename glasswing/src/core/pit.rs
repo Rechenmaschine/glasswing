@@ -279,8 +279,9 @@ mod tests {
     use super::*;
     use crate::agents::minimax_agent::MiniMaxAgent;
     use crate::agents::random_agent::RandomAgent;
-    use crate::games::tic_tac_toe::TicTacToeResult::Winner;
-    use crate::games::tic_tac_toe::{TicTacToe, TicTacToeEvaluator, TicTacToeTeam};
+    use crate::core::TwoPlayerGameResult::Winner;
+    use crate::core::TwoPlayerTeam::{One as X, Two as O};
+    use crate::games::tic_tac_toe::{TicTacToe, TicTacToeEvaluator};
     use log::*;
     use rand::rngs::StdRng;
     use rand::SeedableRng;
@@ -305,10 +306,10 @@ mod tests {
 
             match match1.playout().unwrap().game_result().unwrap() {
                 Winner(team) => match team {
-                    TicTacToeTeam::X => {
+                    X => {
                         simple_won += 1;
                     }
-                    TicTacToeTeam::O => {
+                    O => {
                         rng_won += 1;
                     }
                 },

@@ -1,4 +1,6 @@
-use crate::core::{Action, Evaluator, Game, GameResult, Polarity, State, Team};
+use crate::core::TwoPlayerGameResult::{Draw, Winner};
+use crate::core::TwoPlayerTeam::{One as X, Two as O};
+use crate::core::{Action, Evaluator, Game, State, TwoPlayerGameResult, TwoPlayerTeam};
 use anyhow::Error;
 use std::fmt;
 use std::fmt::Formatter;
@@ -7,12 +9,14 @@ use std::hash::{Hash, Hasher};
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct TicTacToe<const N: usize>;
 
+type GameResult<const N: usize> = TwoPlayerGameResult<TicTacToe<N>>;
+
 impl<const N: usize> Game for TicTacToe<N> {
     type State = TicTacToeState<N>;
     type Action = TicTacToeAction;
-    type Team = TicTacToeTeam;
+    type Team = TwoPlayerTeam;
 
-    type GameResult = TicTacToeResult;
+    type GameResult = TwoPlayerGameResult<Self>;
     const NAME: &'static str = "TicTacToe";
 
     fn initial_state() -> Self::State {
@@ -23,13 +27,13 @@ impl<const N: usize> Game for TicTacToe<N> {
     }
 
     fn starting_team() -> Self::Team {
-        TicTacToeTeam::X
+        X
     }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct TicTacToeState<const N: usize> {
-    board: [[Option<TicTacToeTeam>; N]; N],
+    board: [[Option<TwoPlayerTeam>; N]; N],
     turn: usize,
 }
 
@@ -71,7 +75,7 @@ impl<const N: usize> State<TicTacToe<N>> for TicTacToeState<N> {
         return self.game_result().is_some();
     }
 
-    fn game_result(&self) -> Option<TicTacToeResult> {
+    fn game_result(&self) -> Option<GameResult<N>> {
         // check rows
         for y in 0..N {
             if let Some(first_tile) = self.board[y][0] {
@@ -81,7 +85,7 @@ impl<const N: usize> State<TicTacToe<N>> for TicTacToeState<N> {
                             break;
                         }
                         if x == N - 1 {
-                            return Some(TicTacToeResult::Winner(tile));
+                            return Some(Winner(tile));
                         }
                     } else {
                         break;
@@ -99,7 +103,7 @@ impl<const N: usize> State<TicTacToe<N>> for TicTacToeState<N> {
                             break;
                         }
                         if y == N - 1 {
-                            return Some(TicTacToeResult::Winner(tile));
+                            return Some(Winner(tile));
                         }
                     } else {
                         break;
@@ -116,7 +120,7 @@ impl<const N: usize> State<TicTacToe<N>> for TicTacToeState<N> {
                         break;
                     }
                     if i == N - 1 {
-                        return Some(TicTacToeResult::Winner(tile));
+                        return Some(Winner(tile));
                     }
                 } else {
                     break;
@@ -131,7 +135,7 @@ impl<const N: usize> State<TicTacToe<N>> for TicTacToeState<N> {
                         break;
                     }
                     if i == N - 1 {
-                        return Some(TicTacToeResult::Winner(tile));
+                        return Some(Winner(tile));
                     }
                 } else {
                     break;
@@ -147,7 +151,7 @@ impl<const N: usize> State<TicTacToe<N>> for TicTacToeState<N> {
                 }
             }
         }
-        return Some(TicTacToeResult::Draw);
+        return Some(Draw);
     }
 }
 
@@ -159,8 +163,8 @@ impl<const N: usize> fmt::Display for TicTacToeState<N> {
         for row in self.board.iter() {
             for tile in row.iter() {
                 match tile {
-                    Some(TicTacToeTeam::X) => write!(f, "X")?,
-                    Some(TicTacToeTeam::O) => write!(f, "O")?,
+                    Some(X) => write!(f, "X")?,
+                    Some(O) => write!(f, "O")?,
                     None => write!(f, ".")?,
                 }
                 write!(f, "  ")?;
@@ -185,50 +189,6 @@ impl TicTacToeAction {
 
 impl<const N: usize> Action<TicTacToe<N>> for TicTacToeAction {}
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum TicTacToeTeam {
-    X,
-    O,
-}
-
-impl<const N: usize> Team<TicTacToe<N>> for TicTacToeTeam {
-    fn next(&self) -> Self {
-        match self {
-            TicTacToeTeam::X => TicTacToeTeam::O,
-            TicTacToeTeam::O => TicTacToeTeam::X,
-        }
-    }
-
-    fn polarity(&self) -> Polarity {
-        match self {
-            TicTacToeTeam::X => Polarity::Positive,
-            TicTacToeTeam::O => Polarity::Negative,
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum TicTacToeResult {
-    Winner(TicTacToeTeam),
-    Draw,
-}
-
-impl<const N: usize> GameResult<TicTacToe<N>> for TicTacToeResult {
-    fn winner(&self) -> Option<TicTacToeTeam> {
-        match self {
-            TicTacToeResult::Winner(team) => Some(*team),
-            TicTacToeResult::Draw => None,
-        }
-    }
-
-    fn is_draw(&self) -> bool {
-        match self {
-            TicTacToeResult::Winner(_) => false,
-            TicTacToeResult::Draw => true,
-        }
-    }
-}
-
 // TTT Evaluator
 pub struct TicTacToeEvaluator;
 
@@ -236,14 +196,14 @@ impl<const N: usize> Evaluator<TicTacToe<N>> for TicTacToeEvaluator {
     fn evaluate(&self, state: &TicTacToeState<N>) -> Result<f32, Error> {
         if let Some(result) = state.game_result() {
             match result {
-                TicTacToeResult::Winner(team) => {
+                Winner(team) => {
                     if team == TicTacToe::<N>::starting_team() {
                         Ok(100.0)
                     } else {
                         Ok(-100.0)
                     }
                 }
-                TicTacToeResult::Draw => Ok(0.0),
+                Draw => Ok(0.0),
             }
         } else {
             // Non-terminal state: return heuristic
@@ -260,12 +220,12 @@ impl<const N: usize> Hash for TicTacToeState<N> {
         for row in self.board.iter() {
             for tile in row.iter() {
                 match tile {
-                    Some(TicTacToeTeam::X) => {
+                    Some(X) => {
                         hash = hash << 2;
                         hash += 3;
                         bit_count += 2;
                     }
-                    Some(TicTacToeTeam::O) => {
+                    Some(O) => {
                         hash = hash << 2;
                         hash += 2;
                         bit_count += 2;
@@ -289,8 +249,8 @@ impl<const N: usize> Hash for TicTacToeState<N> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::games::tic_tac_toe::TicTacToeResult::*;
-    use crate::games::tic_tac_toe::TicTacToeTeam::{O, X};
+    use crate::core::TwoPlayerGameResult::Winner;
+    use crate::core::TwoPlayerTeam::{One as X, Two as O};
     use crate::perft;
     //use pretty_env_logger::env_logger::builder;
 
@@ -408,6 +368,10 @@ mod tests {
         let rs = perft::perft::<TTT>(&state, 9, 5);
         assert_eq!(rs.nodes(), 255_168);
 
-        println!("TicTacToe<3> Perft(9) finished in {:.2}s -- Throughput: {}", rs.time().as_secs_f64(), rs.nps());
+        println!(
+            "TicTacToe<3> Perft(9) finished in {:.2}s -- Throughput: {}",
+            rs.time().as_secs_f64(),
+            rs.nps()
+        );
     }
 }

@@ -28,7 +28,8 @@ impl<G: Game, E: Evaluator<G>> NegaMaxAgent<G, E> {
         beta: f32,
     ) -> f32 {
         if depth == 0 || state.is_terminal() {
-            return self.evaluator.evaluate(state).unwrap() * state.team_to_move().polarity().sign() as f32;
+            return self.evaluator.evaluate(state).unwrap()
+                * state.team_to_move().polarity().sign() as f32;
         }
 
         let mut value = f32::MIN;
@@ -76,11 +77,11 @@ mod tests {
     use super::*;
     use crate::agents::random_agent::RandomAgent;
     use crate::core::Match;
-    use crate::games::tic_tac_toe::TicTacToeResult::*;
-    use crate::games::tic_tac_toe::TicTacToeTeam::*;
+    use crate::core::TwoPlayerGameResult::{Draw, Winner};
+    use crate::core::TwoPlayerTeam::{One as X, Two as O};
+    use crate::games::tic_tac_toe::{TicTacToe, TicTacToeEvaluator};
     use log::{error, info};
     use rand::rngs::OsRng;
-    use crate::games::tic_tac_toe::{TicTacToe, TicTacToeEvaluator};
 
     //use pretty_env_logger::env_logger::builder;
 

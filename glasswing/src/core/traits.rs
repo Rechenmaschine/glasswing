@@ -204,7 +204,7 @@ pub trait Game: Sized + Debug + Send + Sync + SerializeAlias + DeserializeAlias 
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
 pub trait GameResult<G: Game>:
-Clone + Debug + Send + Sync + SerializeAlias + DeserializeAlias
+    Clone + Debug + Send + Sync + SerializeAlias + DeserializeAlias
 {
     /// The winner of the game
     fn winner(&self) -> Option<G::Team>;
@@ -261,8 +261,8 @@ Clone + Debug + Send + Sync + SerializeAlias + DeserializeAlias
 /// ```
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
-pub trait State<G: Game<State=Self>>:
-Clone + Debug + Sync + Send + SerializeAlias + DeserializeAlias
+pub trait State<G: Game<State = Self>>:
+    Clone + Debug + Sync + Send + SerializeAlias + DeserializeAlias
 {
     /// Returns true, if the provided action is legal in the current state
     /// By default, this function checks if the action is in the list of legal actions
@@ -394,8 +394,8 @@ impl Polarity {
 /// ```
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
-pub trait Team<G: Game<Team=Self>>:
-Copy + Clone + Debug + Eq + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
+pub trait Team<G: Game<Team = Self>>:
+    Copy + Clone + Debug + Eq + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
 {
     /// In the total order of teams, return the team after this one
     fn next(&self) -> Self;
@@ -447,6 +447,7 @@ Copy + Clone + Debug + Eq + PartialEq + Send + Sync + SerializeAlias + Deseriali
 /// ```
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
-pub trait Action<G: Game<Action=Self>>:
-Clone + Debug + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
-{}
+pub trait Action<G: Game<Action = Self>>:
+    Clone + Debug + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
+{
+}

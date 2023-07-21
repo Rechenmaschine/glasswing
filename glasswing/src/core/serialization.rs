@@ -1,5 +1,5 @@
 #[cfg(feature = "serde_support")]
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 
 #[cfg(feature = "serde_support")]
 pub trait SerializeAlias: Serialize {}

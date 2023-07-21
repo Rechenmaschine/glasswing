@@ -105,11 +105,11 @@ mod tests {
     use super::*;
     use crate::agents::random_agent::RandomAgent;
     use crate::core::Match;
-    use crate::games::tic_tac_toe::TicTacToeResult::*;
-    use crate::games::tic_tac_toe::TicTacToeTeam::*;
+    use crate::core::TwoPlayerGameResult::{Draw, Winner};
+    use crate::core::TwoPlayerTeam::{One as X, Two as O};
+    use crate::games::tic_tac_toe::{TicTacToe, TicTacToeEvaluator};
     use log::{error, info};
     use rand::rngs::OsRng;
-    use crate::games::tic_tac_toe::{TicTacToe, TicTacToeEvaluator};
 
     //use pretty_env_logger::env_logger::builder;
 
