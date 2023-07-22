@@ -80,17 +80,17 @@ mod tests {
     use crate::core::TwoPlayerGameResult::{Draw, Winner};
     use crate::core::TwoPlayerTeam::{One as X, Two as O};
     use crate::games::tic_tac_toe::{TicTacToe, TicTacToeEvaluator};
-    use log::{error, info};
+    use log::info;
     use rand::rngs::OsRng;
 
     //use pretty_env_logger::env_logger::builder;
 
     #[test]
-    fn test_simple() {
+    fn test_alternating() {
         // init logger
         //builder().filter_level(log::LevelFilter::Debug).init();
 
-        let mut wins_minimax = 0;
+        let mut wins_negamax = 0;
         let mut wins_random = 0;
         let mut draws = 0;
 
@@ -108,7 +108,7 @@ mod tests {
                 Ok(result) => match result.game_result().expect("Game result should be present") {
                     Winner(winner) => {
                         if winner == X && i % 2 == 0 || winner == O && i % 2 == 1 {
-                            wins_minimax += 1;
+                            wins_negamax += 1;
                             info!("Minimax won as team {:?}", winner)
                         } else if winner == O && i % 2 == 0 || winner == X && i % 2 == 1 {
                             wins_random += 1;
@@ -123,25 +123,24 @@ mod tests {
                     }
                 },
                 Err(e) => {
-                    error!("Error: {}", e);
+                    panic!("Error: {}", e);
                 }
             }
 
             if i % 10 == 9 {
-                info!("\n======= STATISTICS =======\nWins minimax: {}\nWins random: {}\nDraws: {}\n==========================", wins_minimax, wins_random, draws);
+                info!("\n======= STATISTICS =======\nWins minimax: {}\nWins random: {}\nDraws: {}\n==========================", wins_negamax, wins_random, draws);
             }
-
-            assert!(wins_minimax + wins_random + draws == i + 1);
-            assert!(wins_random == 0); // minimax should always win
         }
+        assert_eq!(wins_negamax + wins_random + draws, 100);
+        assert_eq!(wins_random, 0); // negamax should always win
     }
 
     #[test]
-    fn test_alternating() {
+    fn test_first_player() {
         // init logger
         //builder().filter_level(log::LevelFilter::Info).init();
 
-        let mut wins_minimax = 0;
+        let mut wins_negamax = 0;
         let mut wins_random = 0;
         let mut draws = 0;
 
@@ -155,7 +154,7 @@ mod tests {
                 Ok(result) => match result.game_result().expect("Game result should be present") {
                     Winner(winner) => match winner {
                         X => {
-                            wins_minimax += 1;
+                            wins_negamax += 1;
                             info!("minimax won as team {:?}", winner);
                         }
                         O => {
@@ -169,16 +168,15 @@ mod tests {
                     }
                 },
                 Err(e) => {
-                    error!("Error: {}", e);
+                    panic!("Error: {}", e);
                 }
             }
 
             if i % 10 == 9 {
-                info!("\n======= STATISTICS =======\nWins minimax: {}\nWins random: {}\nDraws: {}\n==========================", wins_minimax, wins_random, draws);
+                info!("\n======= STATISTICS =======\nWins minimax: {}\nWins random: {}\nDraws: {}\n==========================", wins_negamax, wins_random, draws);
             }
-
-            assert!(wins_minimax + wins_random + draws == i + 1);
-            assert!(wins_random == 0); // minimax should always win
         }
+        assert_eq!(wins_negamax + wins_random + draws, 100);
+        assert_eq!(wins_random, 0); // negamax should always win
     }
 }

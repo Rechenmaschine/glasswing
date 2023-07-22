@@ -108,13 +108,13 @@ mod tests {
     use crate::core::TwoPlayerGameResult::{Draw, Winner};
     use crate::core::TwoPlayerTeam::{One as X, Two as O};
     use crate::games::tic_tac_toe::{TicTacToe, TicTacToeEvaluator};
-    use log::{error, info};
+    use log::info;
     use rand::rngs::OsRng;
 
     //use pretty_env_logger::env_logger::builder;
 
     #[test]
-    fn test_simple() {
+    fn test_alternating() {
         // init logger
         //builder().filter_level(log::LevelFilter::Debug).init();
 
@@ -151,7 +151,7 @@ mod tests {
                     }
                 },
                 Err(e) => {
-                    error!("Error: {}", e);
+                    panic!("Error: {}", e);
                 }
             }
 
@@ -165,7 +165,7 @@ mod tests {
     }
 
     #[test]
-    fn test_alternating() {
+    fn test_first_player() {
         // init logger
         //builder().filter_level(log::LevelFilter::Info).init();
 
@@ -197,16 +197,15 @@ mod tests {
                     }
                 },
                 Err(e) => {
-                    error!("Error: {}", e);
+                    panic!("Error: {}", e);
                 }
             }
 
             if i % 10 == 9 {
                 info!("\n======= STATISTICS =======\nWins minimax: {}\nWins random: {}\nDraws: {}\n==========================", wins_minimax, wins_random, draws);
             }
-
-            assert!(wins_minimax + wins_random + draws == i + 1);
-            assert!(wins_random == 0); // minimax should always win
         }
+        assert_eq!(wins_minimax + wins_random + draws, 100);
+        assert_eq!(wins_random, 0); // minimax should always win
     }
 }
