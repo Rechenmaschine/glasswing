@@ -26,7 +26,7 @@ impl<G: Game> Default for RandomAgent<G, ThreadRng> {
     }
 }
 
-impl<G: Game, R: Rng + Send> Agent<G> for RandomAgent<G, R> {
+impl<G: Game, R: Rng> Agent<G> for RandomAgent<G, R> {
     fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
         Ok(state.actions().choose(&mut self.rng).unwrap().clone())
     }

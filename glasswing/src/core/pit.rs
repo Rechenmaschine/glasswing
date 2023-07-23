@@ -4,7 +4,9 @@ use log::debug;
 use std::time::{Duration, Instant};
 
 /// Any type that implements the [`Agent`] trait.
-type AnyAgent<G> = Box<dyn Agent<G> + 'static + Send>;
+// 'static required by Match::new(), but not necessary for AnyAgent.
+// Used only to give stronger guarantees.
+type AnyAgent<G> = Box<dyn Agent<G> + 'static>;
 
 // Utility implementation make this layer transparent to the user.
 impl<G: Game> Agent<G> for AnyAgent<G> {
@@ -112,8 +114,8 @@ impl<G: Game> Match<G> {
     /// [`check_actions`]: #method.check_actions
     /// [`enforce_time_limit`]: #method.enforce_time_limit
     pub fn new(agent1: impl Agent<G> + 'static, agent2: impl Agent<G> + 'static) -> Self {
-        let agent1: Box<dyn Agent<G> + 'static + Send> = Box::new(agent1);
-        let agent2: Box<dyn Agent<G> + 'static + Send> = Box::new(agent2);
+        let agent1: Box<dyn Agent<G> + 'static> = Box::new(agent1);
+        let agent2: Box<dyn Agent<G> + 'static> = Box::new(agent2);
         Match {
             agent1,
             agent2,

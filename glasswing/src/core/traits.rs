@@ -50,7 +50,7 @@ pub enum MatchError<G: Game> {
 ///     }
 /// }
 /// ```
-pub trait Agent<G: Game>: Send {
+pub trait Agent<G: Game> {
     /// Returns the recommended action for the given state.
     ///
     /// # Arguments
@@ -96,7 +96,7 @@ pub trait Agent<G: Game>: Send {
 /// }
 /// ```
 
-pub trait Evaluator<G: Game>: Send + Sync {
+pub trait Evaluator<G: Game> {
     /// Returns a value describing a state's desirability, **independent** from the team
     /// to move. This function may be called on terminal or non-terminal states.
     /// Therefore, it may be required to return a heuristic value for non-terminal states.
@@ -210,7 +210,7 @@ pub trait Evaluator<G: Game>: Send + Sync {
 /// ```
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
-pub trait Game: Sized + Debug + Send + Sync + SerializeAlias + DeserializeAlias + 'static {
+pub trait Game: Sized + Debug + SerializeAlias + DeserializeAlias + 'static {
     /// The type representing the state of the game. This could include the positions of
     /// all pieces in a chess game, the value of all cards in a card game, etc.
     type State: State<Self>;
@@ -270,9 +270,7 @@ pub trait Game: Sized + Debug + Send + Sync + SerializeAlias + DeserializeAlias 
 /// ```
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
-pub trait GameResult<G: Game>:
-    Clone + Debug + Send + Sync + SerializeAlias + DeserializeAlias
-{
+pub trait GameResult<G: Game>: Clone + Debug + SerializeAlias + DeserializeAlias {
     /// The winner of the game
     fn winner(&self) -> Option<G::Team>;
 
@@ -361,8 +359,9 @@ impl<G: Game> GameResult<G> for TwoPlayerGameResult<G> {
 /// ```
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
+// Send and Sync required for `anyhow::Error`
 pub trait State<G: Game<State = Self>>:
-    Clone + Debug + Sync + Send + SerializeAlias + DeserializeAlias
+    Clone + Debug + Send + Sync + SerializeAlias + DeserializeAlias
 {
     /// Returns true, if the provided action is legal in the current state
     /// By default, this function checks if the action is in the list of legal actions
@@ -495,7 +494,7 @@ impl Polarity {
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
 pub trait Team<G: Game<Team = Self>>:
-    Copy + Clone + Debug + Eq + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
+    Copy + Clone + Debug + Eq + PartialEq + SerializeAlias + DeserializeAlias
 {
     /// In the total order of teams, return the team after this one
     fn next(&self) -> Self;
@@ -570,6 +569,7 @@ impl<G: Game<Team = TwoPlayerTeam>> Team<G> for TwoPlayerTeam {
 /// ```
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
+// Send and Sync required for `anyhow::Error`
 pub trait Action<G: Game<Action = Self>>:
     Clone + Debug + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
 {
