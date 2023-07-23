@@ -145,8 +145,9 @@ pub trait Evaluator<G: Game>: Send + Sync {
     /// are technically considered good by the evaluator.
     ///
     /// # Errors
-    /// Errors should be handled gracefully using `anyhow::Error`, instead of panicking.
-    fn heuristic(&self, state: &G::State) -> Result<f32, Error>;
+    /// This function **should generally not fail**. All errors are considered critical,
+    /// therefore this function may panic if an error occurs.
+    fn heuristic(&self, state: &G::State) -> f32;
 
     /// Evaluates an action in a given state. This function may be called with any
     /// *legal* move of a *non-terminal* state. Calling the function with an illegal
@@ -168,8 +169,9 @@ pub trait Evaluator<G: Game>: Send + Sync {
     /// are technically considered good by the evaluator.
     ///
     /// # Errors
-    /// Errors should be handled gracefully using `anyhow::Error`, instead of panicking.
-    fn action_heuristic(&self, state: &G::State, action: &G::Action) -> Result<f32, Error> {
+    /// This function **should generally not fail**. All errors are considered critical,
+    /// therefore this function may panic if an error occurs.
+    fn action_heuristic(&self, state: &G::State, action: &G::Action) -> f32 {
         let post = state.apply_action(action);
         self.heuristic(&post)
     }
