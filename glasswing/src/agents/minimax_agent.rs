@@ -5,7 +5,11 @@ use std::time::Duration;
 use crate::core::{Agent, Evaluator, Game, MatchError, Polarity, State, Team};
 use std::marker::PhantomData;
 
-pub struct MiniMaxAgent<G: Game, E: Evaluator<G>> {
+pub struct MiniMaxAgent<G, E>
+where
+    G: Game,
+    E: Evaluator<G>,
+{
     depth: u32,
     evaluator: E,
     _game: PhantomData<G>,
@@ -26,9 +30,9 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
         depth: u32,
         mut alpha: f32,
         mut beta: f32,
-    ) -> f32 {
+    ) -> Result<f32, Error> {
         if depth == 0 || state.is_terminal() {
-            return self.evaluator.evaluate(state).unwrap();
+            return self.evaluator.evaluate(state);
         }
 
         let maximizing_player = if state.team_to_move().polarity() == Polarity::Positive {
@@ -41,24 +45,24 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
             let mut value = f32::MIN;
             for action in state.actions() {
                 let new_state = state.apply_action(&action);
-                value = value.max(self.minimax(&new_state, depth - 1, alpha, beta));
+                value = value.max(self.minimax(&new_state, depth - 1, alpha, beta)?);
                 alpha = alpha.max(value);
                 if alpha >= beta {
                     break; // Beta cut-off
                 }
             }
-            value
+            Ok(value)
         } else {
             let mut value = f32::MAX;
             for action in state.actions() {
                 let new_state = state.apply_action(&action);
-                value = value.min(self.minimax(&new_state, depth - 1, alpha, beta));
+                value = value.min(self.minimax(&new_state, depth - 1, alpha, beta)?);
                 beta = beta.min(value);
                 if beta <= alpha {
                     break; // Alpha cut-off
                 }
             }
-            value
+            Ok(value)
         }
     }
 }
@@ -77,7 +81,7 @@ impl<G: Game, E: Evaluator<G>> Agent<G> for MiniMaxAgent<G, E> {
 
         for action in state.actions() {
             let new_state = state.apply_action(&action);
-            let value = self.minimax(&new_state, self.depth - 1, alpha, beta);
+            let value = self.minimax(&new_state, self.depth - 1, alpha, beta)?;
 
             trace!("Considering action {:?} with value {}", action, value);
 

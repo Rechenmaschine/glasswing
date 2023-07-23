@@ -95,19 +95,84 @@ pub trait Agent<G: Game>: Send {
 ///     }
 /// }
 /// ```
+
 pub trait Evaluator<G: Game>: Send + Sync {
-    /// Evaluates the given state for a two-player game.
+    /// Returns a value describing a state's desirability, **independent** from the team
+    /// to move. This function may be called on terminal or non-terminal states.
+    /// Therefore, it may be required to return a heuristic value for non-terminal states.
     ///
-    /// The magnitude of the score indicates how likely a player is to win.
-    /// - A positive score indicates that the first player is winning
-    /// - A negative score indicates that the second player is winning
-    /// - A score of 0 indicates that the game is likely a draw
+    /// For the evaluation function, the following should hold:
     ///
-    /// # Arguments
+    /// - If `state.team_to_move().polarity() == Polarity::Positive` then evaluation
+    /// should be *positive* if the state is *winning for the team to move*. Else, the
+    /// evaluation should be negative.
     ///
-    /// * `state` - The state to evaluate. This can be called in any stage of the state machine,
-    /// depending on the algorithm that uses it.
+    /// - If `state.team_to_move().polarity() == Polarity::Negative` then evaluation
+    /// should be negative if the state is winning for the team to move. Else, the
+    /// evaluation should be positive.
+    ///
+    ///
+    /// This is **equivalent** to evaluating the state relative to the team to move
+    /// and then multiplying the result by the polarity of the team to move, where
+    /// positive indicates a winning state and negative indicates a losing state.
+    ///
+    /// Note that the magnitude of the evaluation may play a key role for the algorithm.
+    /// For example, if polarity is positive, then minimax will prefer a state with
+    /// a value of 10 over a state with a value of 1, even though both states are
+    /// technically evaluated as winning by the evaluator.
+    ///
+    /// # Errors
+    /// Errors should be handled gracefully using `anyhow::Error`, instead of panicking.
     fn evaluate(&self, state: &G::State) -> Result<f32, Error>;
+
+    /// Returns the heuristic value of an action in a given state. This function may
+    /// be called with any *legal* move of a *non-terminal* state. Calling the function
+    /// with an illegal move or a terminal state is generally not well-defined.
+    ///
+    /// This function is used in algorithms such as alpha-beta pruning to order the
+    /// moves of a state before visiting them, potentially increasing the number of
+    /// pruned nodes.
+    ///
+    /// For the evaluation function, the following should hold. Let `post` be the
+    /// resulting state after applying `action` to `state`.
+    ///
+    /// - If `post` is likely to be winning for the team to move, then the heuristic
+    /// value should be *positive*. Else, the heuristic value should be *negative*.
+    ///
+    /// Note that the magnitude of the heuristic value may play a key role for
+    /// the algorithm. For example, a state with a heuristic value of 10 will be
+    /// preferred over a state with a heuristic value of 1, even though both states
+    /// are technically considered good by the evaluator.
+    ///
+    /// # Errors
+    /// Errors should be handled gracefully using `anyhow::Error`, instead of panicking.
+    fn heuristic(&self, state: &G::State) -> Result<f32, Error>;
+
+    /// Evaluates an action in a given state. This function may be called with any
+    /// *legal* move of a *non-terminal* state. Calling the function with an illegal
+    /// move or a terminal state is generally not well-defined.
+    ///
+    /// This heuristic is **not** necessarily consistent with the heuristic function.
+    /// While this is true for the default implementation, this function may be
+    /// reimplemented to define a new heuristic and sacrifice accuracy for speed.
+    ///
+    /// For the evaluation function, the following should hold. Let `post` be the
+    /// resulting state after applying `action` to `state`.
+    ///
+    /// - If `post` is likely to be winning for the team to move, then the heuristic
+    /// value should be *positive*. Else, the heuristic value should be *negative*.
+    ///
+    /// Note that the magnitude of the heuristic value may play a key role for
+    /// the algorithm. For example, an action with a heuristic value of 10 will be
+    /// preferred over an action with a heuristic value of 1, even though both actions
+    /// are technically considered good by the evaluator.
+    ///
+    /// # Errors
+    /// Errors should be handled gracefully using `anyhow::Error`, instead of panicking.
+    fn action_heuristic(&self, state: &G::State, action: &G::Action) -> Result<f32, Error> {
+        let post = state.apply_action(action);
+        self.heuristic(&post)
+    }
 }
 
 /// The `Game` trait encapsulates the concept of a game in this framework.
@@ -211,6 +276,39 @@ pub trait GameResult<G: Game>:
 
     /// Returns true, if the game is a draw
     fn is_draw(&self) -> bool;
+}
+
+#[derive(Debug, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum TwoPlayerGameResult<G: Game> {
+    Winner(G::Team),
+    Draw,
+}
+
+// Manual implementation of Clone because of the generic type parameter
+impl<G: Game> Clone for TwoPlayerGameResult<G> {
+    fn clone(&self) -> Self {
+        match self {
+            TwoPlayerGameResult::Winner(team) => TwoPlayerGameResult::Winner(*team),
+            TwoPlayerGameResult::Draw => TwoPlayerGameResult::Draw,
+        }
+    }
+}
+
+impl<G: Game> GameResult<G> for TwoPlayerGameResult<G> {
+    fn winner(&self) -> Option<G::Team> {
+        match self {
+            TwoPlayerGameResult::Winner(team) => Some(*team),
+            TwoPlayerGameResult::Draw => None,
+        }
+    }
+
+    fn is_draw(&self) -> bool {
+        match self {
+            TwoPlayerGameResult::Winner(_) => false,
+            TwoPlayerGameResult::Draw => true,
+        }
+    }
 }
 
 /// The `State` trait describes a state in a game.
@@ -420,6 +518,29 @@ pub trait Team<G: Game<Team = Self>>:
     /// then the starting team plays. If the current ply is 2, then the team after that plays.
     fn in_turn(turn: usize) -> Self {
         G::starting_team().nth(turn)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum TwoPlayerTeam {
+    One,
+    Two,
+}
+
+impl<G: Game<Team = TwoPlayerTeam>> Team<G> for TwoPlayerTeam {
+    fn next(&self) -> Self {
+        match self {
+            TwoPlayerTeam::One => TwoPlayerTeam::Two,
+            TwoPlayerTeam::Two => TwoPlayerTeam::One,
+        }
+    }
+
+    fn polarity(&self) -> Polarity {
+        match self {
+            TwoPlayerTeam::One => Polarity::Positive,
+            TwoPlayerTeam::Two => Polarity::Negative,
+        }
     }
 }
 

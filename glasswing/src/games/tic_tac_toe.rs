@@ -207,8 +207,12 @@ impl<const N: usize> Evaluator<TicTacToe<N>> for TicTacToeEvaluator {
             }
         } else {
             // Non-terminal state: return heuristic
-            Ok(0.0)
+            self.heuristic(state)
         }
+    }
+
+    fn heuristic(&self, _: &TicTacToeState<N>) -> Result<f32, Error> {
+        Ok(0.0)
     }
 }
 
