@@ -2,6 +2,7 @@ use anyhow::Error;
 use log::{debug, trace};
 use std::time::Duration;
 
+use crate::agents::sort_actions;
 use crate::core::{Agent, Evaluator, Game, MatchError, State, Team};
 use std::marker::PhantomData;
 
@@ -33,8 +34,11 @@ impl<G: Game, E: Evaluator<G>> NegaMaxAgent<G, E> {
             );
         }
 
+        //sort moves by heuristic value
+        let sorted_actions = sort_actions(state, state.actions(), &self.evaluator);
+
         let mut value = f32::MIN;
-        for action in state.actions() {
+        for action in sorted_actions {
             let new_state = state.apply_action(&action);
             let score = -self.negamax(&new_state, depth - 1, -beta, -alpha)?;
             value = value.max(score);

@@ -2,6 +2,7 @@ use anyhow::Error;
 use log::{debug, trace};
 use std::time::Duration;
 
+use crate::agents::sort_actions;
 use crate::core::{Agent, Evaluator, Game, MatchError, Polarity, State, Team};
 use std::marker::PhantomData;
 
@@ -35,34 +36,35 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
             return self.evaluator.evaluate(state);
         }
 
-        let maximizing_player = if state.team_to_move().polarity() == Polarity::Positive {
-            true
-        } else {
-            false
-        };
+        let sorted_actions = sort_actions(state, state.actions(), &self.evaluator);
 
-        if maximizing_player {
-            let mut value = f32::MIN;
-            for action in state.actions() {
-                let new_state = state.apply_action(&action);
-                value = value.max(self.minimax(&new_state, depth - 1, alpha, beta)?);
-                alpha = alpha.max(value);
-                if alpha >= beta {
-                    break; // Beta cut-off
+        match state.team_to_move().polarity() {
+            Polarity::Positive => {
+                // maximizing
+                let mut value = f32::MIN;
+                for action in sorted_actions {
+                    let new_state = state.apply_action(&action);
+                    value = value.max(self.minimax(&new_state, depth - 1, alpha, beta)?);
+                    alpha = alpha.max(value);
+                    if alpha >= beta {
+                        break; // Beta cut-off
+                    }
                 }
+                Ok(value)
             }
-            Ok(value)
-        } else {
-            let mut value = f32::MAX;
-            for action in state.actions() {
-                let new_state = state.apply_action(&action);
-                value = value.min(self.minimax(&new_state, depth - 1, alpha, beta)?);
-                beta = beta.min(value);
-                if beta <= alpha {
-                    break; // Alpha cut-off
+            Polarity::Negative => {
+                // minimizing
+                let mut value = f32::MAX;
+                for action in sorted_actions {
+                    let new_state = state.apply_action(&action);
+                    value = value.min(self.minimax(&new_state, depth - 1, alpha, beta)?);
+                    beta = beta.min(value);
+                    if beta <= alpha {
+                        break; // Alpha cut-off
+                    }
                 }
+                Ok(value)
             }
-            Ok(value)
         }
     }
 }
