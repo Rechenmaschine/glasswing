@@ -137,11 +137,11 @@ impl Evaluator<CountingGame> for CountingGameEvaluator {
                 .ok_or(anyhow!("Error encountered while evaluating state"))
         } else {
             // the heuristic: the higher the score is, the better.
-            Ok(state.total as f32
-                * match state.team_to_move() {
-                    CountingTeam::One => 1.0,
-                    CountingTeam::Two => -1.0,
-                })
+            Ok(self.heuristic(state)? * state.team_to_move().polarity().sign() as f32)
         }
+    }
+
+    fn heuristic(&self, state: &CountingState) -> Result<f32, Error> {
+        Ok(state.total as f32)
     }
 }

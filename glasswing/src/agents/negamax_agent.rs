@@ -26,23 +26,24 @@ impl<G: Game, E: Evaluator<G>> NegaMaxAgent<G, E> {
         depth: u32,
         mut alpha: f32,
         beta: f32,
-    ) -> f32 {
+    ) -> Result<f32, Error> {
         if depth == 0 || state.is_terminal() {
-            return self.evaluator.evaluate(state).unwrap()
-                * state.team_to_move().polarity().sign() as f32;
+            return Ok(
+                self.evaluator.evaluate(state)? * state.team_to_move().polarity().sign() as f32
+            );
         }
 
         let mut value = f32::MIN;
         for action in state.actions() {
             let new_state = state.apply_action(&action);
-            let score = -self.negamax(&new_state, depth - 1, -beta, -alpha);
+            let score = -self.negamax(&new_state, depth - 1, -beta, -alpha)?;
             value = value.max(score);
             alpha = alpha.max(score);
             if alpha >= beta {
                 break; // Beta cut-off
             }
         }
-        value
+        Ok(value)
     }
 }
 
@@ -55,7 +56,7 @@ impl<G: Game, E: Evaluator<G>> Agent<G> for NegaMaxAgent<G, E> {
 
         for action in state.actions() {
             let new_state = state.apply_action(&action);
-            let value = -self.negamax(&new_state, self.depth - 1, -beta, -alpha);
+            let value = -self.negamax(&new_state, self.depth - 1, -beta, -alpha)?;
 
             trace!("Considering action {:?} with value {}", action, value);
 
