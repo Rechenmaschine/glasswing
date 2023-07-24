@@ -1,7 +1,6 @@
 use crate::core::{Agent, Game, State};
 use anyhow::Error;
-use rand::prelude::ThreadRng;
-use rand::seq::SliceRandom;
+use rand::prelude::{IteratorRandom, ThreadRng};
 use rand::Rng;
 use std::marker::PhantomData;
 use std::time::Duration;
@@ -28,6 +27,11 @@ impl<G: Game> Default for RandomAgent<G, ThreadRng> {
 
 impl<G: Game, R: Rng> Agent<G> for RandomAgent<G, R> {
     fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
-        Ok(state.actions().choose(&mut self.rng).unwrap().clone())
+        Ok(state
+            .actions()
+            .into_iter()
+            .choose(&mut self.rng)
+            .unwrap()
+            .clone())
     }
 }

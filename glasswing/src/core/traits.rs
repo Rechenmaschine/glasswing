@@ -41,7 +41,7 @@ pub enum MatchError<G: Game> {
 /// impl Agent for ChessAI {
 ///     type Game = Chess;
 ///
-///     fn recommend_action(
+///     fn select_action(
 ///         &mut self,
 ///         state: &<<Self as Agent>::Game as Game>::State,
 ///         time_limit: Duration,
@@ -363,23 +363,26 @@ impl<G: Game> GameResult<G> for TwoPlayerGameResult<G> {
 pub trait State<G: Game<State = Self>>:
     Clone + Debug + Send + Sync + SerializeAlias + DeserializeAlias
 {
+    /// The type representing the actions that can be taken in this state.
+    type ActionIterator: IntoIterator<Item = G::Action>;
+
     /// Returns true, if the provided action is legal in the current state
     /// By default, this function checks if the action is in the list of legal actions
     /// provided in [Self::actions]
     ///
     /// **State machine** - This function should only be called in the [StateStage::Await] stage.
     fn is_legal(&self, action: &G::Action) -> bool {
-        self.actions().contains(action)
+        self.actions().into_iter().any(|a| a == *action)
     }
 
-    /// Returns a vector of all **legal** actions that can be taken from this state.
+    /// Returns all legal actions that can be taken from this state.
     ///
     /// **State machine** - This function should only be called in the [StateStage::Await] stage.
-    fn actions(&self) -> Vec<G::Action>;
+    fn actions(&self) -> Self::ActionIterator;
 
     /// Returns the number of legal actions that can be taken from this state.
     fn count_actions(&self) -> usize {
-        self.actions().len()
+        self.actions().into_iter().count()
     }
 
     /// Returns the team whose turn it is to play in the current state. This implementation

@@ -35,7 +35,8 @@ impl<G: Game, E: Evaluator<G>> NegaMaxAgent<G, E> {
         }
 
         //sort moves by heuristic value
-        let sorted_actions = sort_actions(state, state.actions(), &self.evaluator);
+        let mut sorted_actions = state.actions().into_iter().collect::<Vec<G::Action>>();
+        sort_actions(state, &mut sorted_actions, &self.evaluator);
 
         let mut value = f32::MIN;
         for action in sorted_actions {

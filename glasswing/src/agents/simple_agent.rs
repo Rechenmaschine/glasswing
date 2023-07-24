@@ -26,8 +26,8 @@ impl<G: Game> Agent<G> for SimpleAgent<G> {
     fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
         state
             .actions()
-            .get(0)
-            .cloned()
+            .into_iter()
+            .next()
             .ok_or_else(|| MatchError::<G>::NoAvailableActions(state.clone()).into())
     }
 }

@@ -36,13 +36,14 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
             return self.evaluator.evaluate(state);
         }
 
-        let sorted_actions = sort_actions(state, state.actions(), &self.evaluator);
+        let mut actions = state.actions().into_iter().collect::<Vec<G::Action>>();
+        sort_actions(state, &mut actions, &self.evaluator);
 
         match state.team_to_move().polarity() {
             Polarity::Positive => {
                 // maximizing
                 let mut value = f32::MIN;
-                for action in sorted_actions {
+                for action in actions {
                     let new_state = state.apply_action(&action);
                     value = value.max(self.minimax(&new_state, depth - 1, alpha, beta)?);
                     alpha = alpha.max(value);
@@ -55,7 +56,7 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
             Polarity::Negative => {
                 // minimizing
                 let mut value = f32::MAX;
-                for action in sorted_actions {
+                for action in actions {
                     let new_state = state.apply_action(&action);
                     value = value.min(self.minimax(&new_state, depth - 1, alpha, beta)?);
                     beta = beta.min(value);

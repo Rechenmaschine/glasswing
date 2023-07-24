@@ -76,11 +76,13 @@ pub struct CountingState {
 }
 
 impl State<CountingGame> for CountingState {
+    type ActionIterator = Vec<CountingAction>;
+
     fn is_legal(&self, action: &CountingAction) -> bool {
         action.increment <= 3 && action.increment > 0
     }
 
-    fn actions(&self) -> Vec<CountingAction> {
+    fn actions(&self) -> Self::ActionIterator {
         vec![
             CountingAction { increment: 1 },
             CountingAction { increment: 2 },

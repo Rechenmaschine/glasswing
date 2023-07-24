@@ -14,14 +14,13 @@ use ordered_float::OrderedFloat;
 /// according to the given evaluator
 fn sort_actions<G: Game, E: Evaluator<G>>(
     state: &G::State,
-    mut actions: Vec<G::Action>,
+    actions: &mut [G::Action],
     evaluator: &E,
-) -> Vec<G::Action> {
+) {
     actions.sort_by_cached_key(|action| {
         //use -value, such that we have descending order
         OrderedFloat(-evaluator.action_heuristic(state, action))
     });
-    actions
 }
 
 #[cfg(test)]
@@ -33,7 +32,7 @@ mod tests {
     #[test]
     fn test_sort() {
         let state = CountingGame::initial_state();
-        let actions = state.actions();
+        let mut actions = state.actions().into_iter().collect::<Vec<_>>();
         let eval = CountingGameEvaluator;
 
         assert_eq!(
@@ -45,11 +44,11 @@ mod tests {
             ],
             "Implementation changed, please update test"
         );
-        let sorted = sort_actions(&state, actions, &eval);
+        sort_actions(&state, &mut actions, &eval);
 
         // Heuristic maximises increment
         assert_eq!(
-            sorted,
+            actions,
             vec![
                 CountingAction { increment: 3 },
                 CountingAction { increment: 2 },

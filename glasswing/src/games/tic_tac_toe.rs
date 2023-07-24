@@ -45,7 +45,9 @@ impl<const N: usize> fmt::Debug for TicTacToeState<N> {
 }
 
 impl<const N: usize> State<TicTacToe<N>> for TicTacToeState<N> {
-    fn actions(&self) -> Vec<TicTacToeAction> {
+    type ActionIterator = std::vec::IntoIter<TicTacToeAction>;
+
+    fn actions(&self) -> Self::ActionIterator {
         let mut actions = vec![];
         for (x, row) in self.board.iter().enumerate() {
             for (y, tile) in row.iter().enumerate() {
@@ -54,7 +56,7 @@ impl<const N: usize> State<TicTacToe<N>> for TicTacToeState<N> {
                 }
             }
         }
-        actions
+        actions.into_iter()
     }
 
     fn turn(&self) -> usize {
