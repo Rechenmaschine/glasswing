@@ -58,11 +58,8 @@ pub trait Agent<G: Game> {
     /// * `state` - The state for which an action should be recommended. It is provided in the
     /// [StateStage::Await] stage.
     /// * `time_limit` - The time limit for the agent to complete recommendation of an action.
-    fn recommend_action(
-        &mut self,
-        state: &G::State,
-        time_limit: Duration,
-    ) -> Result<G::Action, Error>;
+    fn select_action(&mut self, state: &G::State, time_limit: Duration)
+        -> Result<G::Action, Error>;
 }
 
 /// The `Evaluator` trait defines a heuristic function for evaluating the state of a game.

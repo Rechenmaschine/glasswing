@@ -71,7 +71,7 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
 }
 
 impl<G: Game, E: Evaluator<G>> Agent<G> for MiniMaxAgent<G, E> {
-    fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
+    fn select_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
         let maximizing_player = G::starting_team() == state.team_to_move();
         let mut best_action = None;
         let mut best_value = if maximizing_player {

@@ -10,12 +10,12 @@ type AnyAgent<G> = Box<dyn Agent<G> + 'static>;
 
 // Utility implementation make this layer transparent to the user.
 impl<G: Game> Agent<G> for AnyAgent<G> {
-    fn recommend_action(
+    fn select_action(
         &mut self,
         state: &G::State,
         time_limit: Duration,
     ) -> Result<G::Action, Error> {
-        self.as_mut().recommend_action(state, time_limit)
+        self.as_mut().select_action(state, time_limit)
     }
 }
 
@@ -234,7 +234,7 @@ impl<G: Game> Iterator for Match<G> {
         };
 
         let start = Instant::now();
-        let action = player.recommend_action(&self.state, self.time_limit);
+        let action = player.select_action(&self.state, self.time_limit);
         let agent_time = start.elapsed();
 
         // if the agent returned an error, the match terminates with an error

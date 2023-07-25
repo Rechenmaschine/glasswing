@@ -23,7 +23,7 @@ impl<G: Game> Default for SimpleAgent<G> {
 }
 
 impl<G: Game> Agent<G> for SimpleAgent<G> {
-    fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
+    fn select_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
         state
             .actions()
             .into_iter()

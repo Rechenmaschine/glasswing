@@ -53,7 +53,7 @@ impl<G: Game, E: Evaluator<G>> NegaMaxAgent<G, E> {
 }
 
 impl<G: Game, E: Evaluator<G>> Agent<G> for NegaMaxAgent<G, E> {
-    fn recommend_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
+    fn select_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
         let mut best_action = None;
         let mut best_value = f32::MIN;
         let mut alpha = f32::MIN;
