@@ -1,6 +1,7 @@
 use crate::core::serialization::{DeserializeAlias, SerializeAlias};
 use anyhow::Error;
 use std::fmt::Debug;
+use std::hash::{Hash, Hasher};
 use std::time::Duration;
 use thiserror::Error;
 
@@ -573,4 +574,24 @@ impl<G: Game<Team = TwoPlayerTeam>> Team<G> for TwoPlayerTeam {
 pub trait Action<G: Game<Action = Self>>:
     Clone + Debug + PartialEq + Send + Sync + SerializeAlias + DeserializeAlias
 {
+}
+
+/// A hashable type.
+///
+/// Types implementing DirectHash can directly return a hash **without**
+/// going through a `Hasher` instance.
+///
+/// # DirectHash and Eq
+/// When implementing `DirectHash`, it is important that the following property holds:
+///
+/// `k1 == k2 -> hash(k1) == hash(k2)`
+///
+/// In other words, if two keys are equal, their hashes must also be equal.
+///
+/// # Collisions
+/// A hash function should strive to produce as few collisions as possible for a given set of keys.
+/// Certain data structures like a `Transposition` table will rely on collisions being rare.
+pub trait DirectHash {
+    /// Returns the hash of the object.
+    fn hash(&self) -> u64;
 }
