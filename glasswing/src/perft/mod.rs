@@ -1,8 +1,8 @@
-mod transposition;
+pub mod transposition;
 
 use crate::core::{Game, State};
+use crate::perft::transposition::{DirectHash, TranspositionHashMap};
 use std::fmt;
-use std::hash::Hash;
 use std::ops::Range;
 use std::time::Duration;
 use std::time::Instant;
@@ -10,7 +10,7 @@ use transposition::TranspositionTable;
 
 pub struct PerftResult {
     depth: u32,
-    nodes: usize,
+    nodes: u64,
     time: Duration,
 }
 
@@ -19,7 +19,7 @@ impl PerftResult {
         self.depth
     }
 
-    pub fn nodes(&self) -> usize {
+    pub fn nodes(&self) -> u64 {
         self.nodes
     }
 
@@ -32,7 +32,7 @@ impl PerftResult {
     }
 }
 
-pub struct Nps(usize, Duration);
+pub struct Nps(u64, Duration);
 
 impl Nps {
     pub fn as_f64(&self) -> f64 {
@@ -71,13 +71,14 @@ impl fmt::Display for Nps {
     }
 }
 
+//TODO remove because bad
 pub fn incremental_perft<G: Game, F: Fn(u32) -> u32>(
     state: &G::State,
     range: Range<u32>,
     table_depth: F,
 ) -> Vec<PerftResult>
 where
-    G::State: Hash + Eq,
+    G::State: DirectHash,
 {
     let mut vec = vec![];
     for i in range {
@@ -90,7 +91,7 @@ where
 
 pub fn perft<G: Game>(state: &G::State, depth: u32, tr_depth: u32) -> PerftResult
 where
-    G::State: Hash + Eq,
+    <G as Game>::State: DirectHash,
 {
     if depth == 0 {
         PerftResult {
@@ -99,7 +100,7 @@ where
             time: Duration::ZERO,
         }
     } else {
-        let mut tr = TranspositionTable::<G>::new();
+        let mut tr = TranspositionHashMap::<G::State, u64>::new();
         let start_time = Instant::now();
         let nodes = perft_recursive::<G>(&mut tr, state, depth - 1, tr_depth);
         let elapsed = start_time.elapsed();
@@ -112,20 +113,20 @@ where
 }
 
 fn perft_recursive<G: Game>(
-    tr: &mut TranspositionTable<G>,
+    tr: &mut TranspositionHashMap<G::State, u64>,
     state: &G::State,
     depth: u32,
     tr_depth: u32,
-) -> usize
+) -> u64
 where
-    G::State: Hash + Eq,
+    <G as Game>::State: DirectHash,
 {
     if state.is_terminal() {
         return 1;
     }
 
     if depth == 0 {
-        return state.count_actions();
+        return state.count_actions() as u64;
     }
 
     let mut nodes = 0;
@@ -139,10 +140,10 @@ where
             perft_recursive::<G>(tr, &new_state, depth - 1, 0)
         } else {
             if let Some(child_nodes) = tr.get(&new_state) {
-                child_nodes
+                *child_nodes
             } else {
                 let child_nodes = perft_recursive::<G>(tr, &new_state, depth - 1, tr_depth - 1);
-                tr.insert(new_state, child_nodes);
+                tr.insert(&new_state, child_nodes);
                 child_nodes
             }
         };

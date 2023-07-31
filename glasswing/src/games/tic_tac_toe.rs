@@ -1,6 +1,7 @@
 use crate::core::TwoPlayerGameResult::{Draw, Winner};
 use crate::core::TwoPlayerTeam::{One as X, Two as O};
 use crate::core::{Action, Evaluator, Game, State, TwoPlayerGameResult, TwoPlayerTeam};
+use crate::perft::transposition::{DirectHash, TransparentHasher};
 use anyhow::Error;
 use std::fmt;
 use std::fmt::Formatter;
@@ -249,6 +250,14 @@ impl<const N: usize> Hash for TicTacToeState<N> {
             }
         }
         state.write_u64(hash);
+    }
+}
+
+impl<const N: usize> DirectHash for TicTacToeState<N> {
+    fn get_hash(&self) -> u64 {
+        let mut hasher = TransparentHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
     }
 }
 
