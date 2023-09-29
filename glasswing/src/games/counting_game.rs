@@ -7,7 +7,9 @@ use serde::{Deserialize, Serialize};
 /// A game, where each player can add 0, 1 or 2 to a total. The player who counts to 21 first, wins.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct CountingGame;
+pub struct CountingGame {
+    state: CountingState,
+}
 
 impl Game for CountingGame {
     type State = CountingState;
@@ -16,6 +18,20 @@ impl Game for CountingGame {
     type GameResult = CountingGameResult;
 
     const NAME: &'static str = "CountingGame";
+
+    fn new() -> Self {
+        CountingGame {
+            state: Self::initial_state(),
+        }
+    }
+
+    fn current_state(&self) -> Self::State {
+        self.state.clone()
+    }
+
+    fn apply_action(&mut self, action: &Self::Action) {
+        self.state = self.state.apply_action(action);
+    }
 
     fn initial_state() -> Self::State {
         CountingState { total: 0, turn: 0 }

@@ -226,6 +226,19 @@ pub trait Game: Sized + Debug + SerializeAlias + DeserializeAlias + 'static {
 
     const NAME: &'static str;
 
+    /// Return an instance of the game.
+    fn new() -> Self;
+
+    /// Executed before each turn, ie. before the action is applied
+    fn before_turn(&mut self) {}
+
+    /// Executed after each turn, ie. after the action has been applied
+    fn after_turn(&mut self) {}
+
+    fn current_state(&self) -> Self::State;
+
+    fn apply_action(&mut self, action: &Self::Action);
+
     /// Returns the initial state of the game. The initial state always has ply 0.
     /// This should be an invalid state, a starting position that is not reachable by any action.
     /// The initial state marks the starting point of the state machine.
@@ -358,9 +371,7 @@ impl<G: Game> GameResult<G> for TwoPlayerGameResult<G> {
 ///
 /// Note: `SerializeAlias` and `DeserializeAlias` are used for serialization and deserialization support.
 // Send and Sync required for `anyhow::Error`
-pub trait State<G: Game<State = Self>>:
-    Clone + Debug + Send + Sync + SerializeAlias + DeserializeAlias
-{
+pub trait State<G: Game>: Clone + Debug + Send + Sync + SerializeAlias + DeserializeAlias {
     /// The type representing the actions that can be taken in this state.
     type ActionIterator: IntoIterator<Item = G::Action>;
 
@@ -421,6 +432,19 @@ pub trait State<G: Game<State = Self>>:
     /// **State machine** - This function should return `Some(game_result)` in the [StateStage::Terminal] stage
     /// and `None` in the [StateStage::Applied] stage.
     fn game_result(&self) -> Option<G::GameResult>;
+}
+
+/// A state that supplies probabilities for each action. This is used in games
+/// where the outcome depends on chance, such as dice rolls.
+pub trait ProbabilisticState<G: Game>: State<G> {
+    type ProbabilityIterator: IntoIterator<Item = (G::State, f32)>;
+
+    /// Return an iterator over all possible substates of this random state
+    /// with their respective probability of occurring.
+    fn substates(&self) -> Self::ProbabilityIterator;
+
+    /// Return whether this state involves randomness.
+    fn is_random_state(&self) -> bool;
 }
 
 /// Polarity is used to represent the evaluation direction according to the current player.

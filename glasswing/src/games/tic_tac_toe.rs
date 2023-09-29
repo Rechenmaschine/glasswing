@@ -8,7 +8,9 @@ use std::fmt::Formatter;
 use std::hash::{Hash, Hasher};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct TicTacToe<const N: usize>;
+pub struct TicTacToe<const N: usize> {
+    state: TicTacToeState<N>,
+}
 
 type GameResult<const N: usize> = TwoPlayerGameResult<TicTacToe<N>>;
 
@@ -19,6 +21,20 @@ impl<const N: usize> Game for TicTacToe<N> {
 
     type GameResult = TwoPlayerGameResult<Self>;
     const NAME: &'static str = "TicTacToe";
+
+    fn new() -> Self {
+        TicTacToe {
+            state: Self::initial_state(),
+        }
+    }
+
+    fn current_state(&self) -> Self::State {
+        self.state.clone()
+    }
+
+    fn apply_action(&mut self, action: &Self::Action) {
+        self.state = self.state.apply_action(action);
+    }
 
     fn initial_state() -> Self::State {
         TicTacToeState {

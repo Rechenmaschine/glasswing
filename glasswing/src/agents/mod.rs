@@ -1,3 +1,4 @@
+pub mod expectiminimax;
 pub mod minimax_agent;
 pub mod negamax_agent;
 pub mod random_agent;
@@ -20,6 +21,14 @@ fn sort_actions<G: Game, E: Evaluator<G>>(
     actions.sort_by_cached_key(|action| {
         //use -value, such that we have descending order
         OrderedFloat(-evaluator.action_heuristic(state, action))
+    });
+}
+
+/// Utility function to sort actions in descending order of probability
+fn sort_actions_by_probability<G: Game>(actions: &mut [(G::Action, f32)]) {
+    actions.sort_by_cached_key(|(_, p)| {
+        //use -value, such that we have descending order
+        OrderedFloat(-p)
     });
 }
 

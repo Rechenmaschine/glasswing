@@ -86,7 +86,7 @@ impl<G: Game> Agent<G> for AnyAgent<G> {
 pub struct Match<G: Game> {
     agent1: AnyAgent<G>,
     agent2: AnyAgent<G>,
-    state: G::State,
+    game: G,
     error: bool,
     check: bool,
     time_limit: Duration,
@@ -119,7 +119,7 @@ impl<G: Game> Match<G> {
         Match {
             agent1,
             agent2,
-            state: G::initial_state(),
+            game: G::new(),
             error: false,
             check: false,
             time_limit: Duration::MAX,
@@ -132,8 +132,8 @@ impl<G: Game> Match<G> {
     /// Note that if the state begins in a non-initial state, `agent1` may not necessarily
     /// be the first to move since `agent1` is mapped to all even turns and `agent2` is mapped
     /// to all odd turns.
-    pub fn with_init_state(self, state: G::State) -> Self {
-        Match { state, ..self }
+    pub fn with_initial_game(self, game: G) -> Self {
+        Match { game, ..self }
     }
 
     /// Sets whether the each action should be checked for validity. If
@@ -174,8 +174,8 @@ impl<G: Game> Match<G> {
     }
 
     /// Returns the current state of the game
-    pub fn state(&self) -> &G::State {
-        &self.state
+    pub fn state(&self) -> G::State {
+        self.game.current_state()
     }
 
     /// Returns the first agent, which plays all even turns
@@ -204,7 +204,7 @@ impl<G: Game> Match<G> {
 
     /// Returns the result of the game or None if the game is not over
     pub fn game_result(&self) -> Option<G::GameResult> {
-        self.state.game_result()
+        self.game.current_state().game_result()
     }
 }
 
@@ -220,21 +220,23 @@ impl<G: Game> Iterator for Match<G> {
         }
 
         // if the game is over, the match may not continue
-        if self.state.is_terminal() {
+        if self.game.current_state().is_terminal() {
             return None;
         }
 
-        let old_state = self.state.clone();
+        self.game.before_turn();
+
+        let old_state = self.game.current_state().clone();
 
         // ply 1 is the first action, so agent A starts
-        let player = if self.state.turn() % 2 == 0 {
+        let player = if self.game.current_state().turn() % 2 == 0 {
             &mut self.agent1
         } else {
             &mut self.agent2
         };
 
         let start = Instant::now();
-        let action = player.select_action(&self.state, self.time_limit);
+        let action = player.select_action(&self.game.current_state(), self.time_limit);
         let agent_time = start.elapsed();
 
         // if the agent returned an error, the match terminates with an error
@@ -257,22 +259,26 @@ impl<G: Game> Iterator for Match<G> {
 
         if self.check {
             // check that the action is valid
-            if !self.state.is_legal(&action) {
+            if !self.game.current_state().is_legal(&action) {
                 self.error = true;
                 return Some(Err(MatchError::<G>::IllegalAction {
                     action,
-                    state: self.state.clone(),
+                    state: self.game.current_state().clone(),
                 }
                 .into()));
             }
         }
 
-        // apply the action to the state, finishing the turn
-        self.state = self.state.apply_action(&action);
+        self.game.apply_action(&action);
+        self.game.after_turn();
 
-        debug!("Applied action: {:?}\n{:?}", action, self.state);
+        debug!(
+            "Applied action: {:?}\n{:?}",
+            action,
+            self.game.current_state()
+        );
 
-        Some(Ok((old_state, action, self.state.clone())))
+        Some(Ok((old_state, action, self.game.current_state().clone())))
     }
 }
 
