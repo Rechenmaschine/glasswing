@@ -72,13 +72,9 @@ impl<G: Game, E: Evaluator<G>> MiniMaxAgent<G, E> {
 
 impl<G: Game, E: Evaluator<G>> Agent<G> for MiniMaxAgent<G, E> {
     fn select_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
-        let maximizing_player = G::starting_team() == state.team_to_move();
+        let maximising = state.team_to_move().polarity() == Polarity::Positive;
         let mut best_action = None;
-        let mut best_value = if maximizing_player {
-            f32::MIN
-        } else {
-            f32::MAX
-        };
+        let mut best_value = if maximising { f32::MIN } else { f32::MAX };
         let mut alpha = f32::MIN;
         let mut beta = f32::MAX;
 
@@ -88,12 +84,10 @@ impl<G: Game, E: Evaluator<G>> Agent<G> for MiniMaxAgent<G, E> {
 
             trace!("Considering action {:?} with value {}", action, value);
 
-            if (maximizing_player && value > best_value)
-                || (!maximizing_player && value < best_value)
-            {
+            if (maximising && value > best_value) || (!maximising && value < best_value) {
                 best_value = value;
                 best_action = Some(action);
-                if maximizing_player {
+                if maximising {
                     alpha = alpha.max(best_value);
                 } else {
                     beta = beta.min(best_value);
