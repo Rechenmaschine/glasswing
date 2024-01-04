@@ -1,8 +1,8 @@
-use std::io;
-use std::io::{BufReader, Stdin};
 use crate::agents::Agent;
 use crate::core::{Game, GwState};
 use anyhow::Error;
+use std::io;
+use std::io::{BufReader, Stdin};
 use std::marker::PhantomData;
 
 pub struct HumanAgent<G, I> {
@@ -11,10 +11,9 @@ pub struct HumanAgent<G, I> {
 }
 
 impl<G, I> HumanAgent<G, I>
-    where
-        G: Game,
-        I: io::BufRead,
-
+where
+    G: Game,
+    I: io::BufRead,
 {
     pub fn new(input_stream: I) -> Self {
         HumanAgent {
@@ -25,11 +24,11 @@ impl<G, I> HumanAgent<G, I>
 }
 
 impl<G, I> Agent<G> for HumanAgent<G, I>
-    where
-        G: Game,
-        G::State: std::fmt::Display,
-        G::Action: std::fmt::Display,
-        I: io::BufRead,
+where
+    G: Game,
+    G::State: std::fmt::Display,
+    G::Action: std::fmt::Display,
+    I: io::BufRead,
 {
     fn select_action(&mut self, state: &G::State) -> Result<G::Action, Error> {
         println!("{}", state);
@@ -46,14 +45,17 @@ impl<G, I> Agent<G> for HumanAgent<G, I>
                     return Ok(action);
                 }
             }
-            println!("Enter a valid index between 0 and {}.", state.count_actions() - 1);
+            println!(
+                "Enter a valid index between 0 and {}.",
+                state.count_actions() - 1
+            );
         }
     }
 }
 
 impl<G> Default for HumanAgent<G, BufReader<Stdin>>
-    where
-        G: Game,
+where
+    G: Game,
 {
     fn default() -> Self {
         HumanAgent::new(BufReader::new(io::stdin()))

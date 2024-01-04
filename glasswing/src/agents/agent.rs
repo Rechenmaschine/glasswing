@@ -1,4 +1,4 @@
-use crate::agents::{Evaluator, sort_actions};
+use crate::agents::{sort_actions, Evaluator};
 use crate::core::{Game, GwState, MatchError};
 use anyhow::Error;
 use std::marker::PhantomData;
@@ -39,9 +39,15 @@ where
 {
     fn select_action(&mut self, state: &G::State) -> Result<G::Action, Error> {
         let mut actions = state.actions().into_iter().collect::<Vec<G::Action>>();
-        sort_actions(state, &mut actions, &mut self.evaluator, &state.team_to_move());
+        sort_actions(
+            state,
+            &mut actions,
+            &mut self.evaluator,
+            &state.team_to_move(),
+        );
 
-        actions.last()
+        actions
+            .last()
             .ok_or_else(|| MatchError::<G>::NoAvailableActions(state.clone()).into())
             .cloned()
     }

@@ -1,7 +1,7 @@
-use std::fmt::{Display, Formatter};
 use glasswing::agents::Evaluator;
 use glasswing::core::Team::{One, Two};
 use glasswing::core::{Game, GameResult, GwAction, GwState, Team};
+use std::fmt::{Display, Formatter};
 
 pub struct TTTHeuristic;
 
@@ -28,11 +28,17 @@ pub struct TTTAction {
 
 impl Display for TTTAction {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "TTTAction {{ pos: {} }}", self.mask.checked_ilog2().expect("Mask must have a single bit set"))
+        write!(
+            f,
+            "TTTAction {{ pos: {} }}",
+            self.mask
+                .checked_ilog2()
+                .expect("Mask must have a single bit set")
+        )
     }
 }
 
-impl<G: Game<Action=TTTAction>> GwAction<G> for TTTAction {}
+impl<G: Game<Action = TTTAction>> GwAction<G> for TTTAction {}
 
 #[derive(Clone, Debug)]
 pub struct TicTacToe;

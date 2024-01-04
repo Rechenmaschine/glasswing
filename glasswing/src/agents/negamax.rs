@@ -1,4 +1,3 @@
-use std::fmt::Debug;
 use crate::agents::{sort_actions, Evaluator};
 use crate::core::{Game, GwState};
 use num_traits::Bounded;
@@ -8,7 +7,7 @@ use std::ops::Neg;
 pub struct NegaMax<G, E>
 where
     G: Game,
-    G::EvalType: Ord + Bounded + Neg<Output=G::EvalType> + Copy,
+    G::EvalType: Ord + Bounded + Neg<Output = G::EvalType> + Copy,
     E: Evaluator<G>,
 {
     depth: u32,
@@ -17,10 +16,10 @@ where
 }
 
 impl<G, E> NegaMax<G, E>
-    where
-        G: Game,
-        G::EvalType: Ord + Bounded + Neg<Output=G::EvalType> + Copy,
-        E: Evaluator<G>,
+where
+    G: Game,
+    G::EvalType: Ord + Bounded + Neg<Output = G::EvalType> + Copy,
+    E: Evaluator<G>,
 {
     pub fn new(depth: u32, evaluator: E) -> Self {
         NegaMax {
@@ -45,7 +44,12 @@ impl<G, E> NegaMax<G, E>
 
         // Generate all legal actions from the current state and sort in ascending order of heuristic.
         let mut actions = state.actions().into_iter().collect::<Vec<G::Action>>();
-        sort_actions(state, &mut actions, &mut self.evaluator, &state.team_to_move());
+        sort_actions(
+            state,
+            &mut actions,
+            &mut self.evaluator,
+            &state.team_to_move(),
+        );
 
         // iterate in descending order as per negamax optimisation
         let mut value = -G::EvalType::max_value();
@@ -63,17 +67,27 @@ impl<G, E> NegaMax<G, E>
 }
 
 impl<G, E> Evaluator<G> for NegaMax<G, E>
-    where
-        G: Game,
-        G::EvalType: Ord + Bounded + Neg<Output=G::EvalType> + Copy,
-        E: Evaluator<G>,
+where
+    G: Game,
+    G::EvalType: Ord + Bounded + Neg<Output = G::EvalType> + Copy,
+    E: Evaluator<G>,
 {
     fn evaluate_for(&mut self, state: &G::State, for_team: &G::Team) -> G::EvalType {
         if state.team_to_move() == *for_team {
             // Hacky workaround to avoid overflow. TODO fix properly.
-            self.negamax(state, self.depth, -G::EvalType::max_value(), G::EvalType::max_value())
-        }else {
-            -self.negamax(state, self.depth, -G::EvalType::max_value(), G::EvalType::max_value())
+            self.negamax(
+                state,
+                self.depth,
+                -G::EvalType::max_value(),
+                G::EvalType::max_value(),
+            )
+        } else {
+            -self.negamax(
+                state,
+                self.depth,
+                -G::EvalType::max_value(),
+                G::EvalType::max_value(),
+            )
         }
     }
 }

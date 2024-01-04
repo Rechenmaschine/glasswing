@@ -19,10 +19,9 @@ use crate::core::{Game, GwState};
 /// for more information.
 pub trait Evaluator<G: Game> {
     /// Evaluate the state relative to the current team, returning a score.
-    fn evaluate(&mut self, state: &G::State) -> G::EvalType{
+    fn evaluate(&mut self, state: &G::State) -> G::EvalType {
         self.evaluate_for(state, &state.team_to_move())
     }
-
 
     /// Evaluate the state relative to the given team, returning a score.
     fn evaluate_for(&mut self, state: &G::State, team: &G::Team) -> G::EvalType;
@@ -32,7 +31,12 @@ pub trait Evaluator<G: Game> {
     /// # Assumptions
     /// - The given action is legal in the given state.
     #[inline]
-    fn evaluate_action_for(&mut self, state: &G::State, action: &G::Action, team: &G::Team) -> G::EvalType {
+    fn evaluate_action_for(
+        &mut self,
+        state: &G::State,
+        action: &G::Action,
+        team: &G::Team,
+    ) -> G::EvalType {
         self.evaluate_for(&state.apply_action(action), team)
     }
 }

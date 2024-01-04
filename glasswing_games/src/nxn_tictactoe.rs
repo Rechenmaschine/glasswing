@@ -1,7 +1,7 @@
+use glasswing::agents::Evaluator;
+use glasswing::core::{Game, GameResult, GwAction, GwState, Team};
 use std::fmt::{Display, Formatter};
 use std::ops::Index;
-use glasswing::agents::{Evaluator};
-use glasswing::core::{Game, GameResult, GwAction, GwState, Team};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NTicTacToe<const N: usize>;
@@ -33,10 +33,7 @@ pub struct NTTTAction {
 
 impl NTTTAction {
     pub fn new(row: usize, col: usize) -> Self {
-        Self {
-            row,
-            col,
-        }
+        Self { row, col }
     }
 }
 
@@ -81,7 +78,7 @@ impl<const N: usize> NTTTState<N> {
     }
 }
 
-impl<const N: usize> Display for NTTTState<N>{
+impl<const N: usize> Display for NTTTState<N> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for row in self.board.iter() {
             for cell in row.iter() {
@@ -131,7 +128,9 @@ impl<const N: usize> GwState<NTicTacToe<N>> for NTTTState<N> {
         }
 
         for col_idx in 0..N {
-            if self.board[0][col_idx].is_some() && (0..N).all(|i| self.board[i][col_idx] == self.board[0][col_idx]) {
+            if self.board[0][col_idx].is_some()
+                && (0..N).all(|i| self.board[i][col_idx] == self.board[0][col_idx])
+            {
                 return Some(GameResult::Win(self.board[0][col_idx].unwrap()));
             }
         }
@@ -140,7 +139,9 @@ impl<const N: usize> GwState<NTicTacToe<N>> for NTTTState<N> {
             return Some(GameResult::Win(self.board[0][0].unwrap()));
         }
 
-        if self.board[0][N - 1].is_some() && (0..N).all(|i| self.board[i][N - 1 - i] == self.board[0][N - 1]) {
+        if self.board[0][N - 1].is_some()
+            && (0..N).all(|i| self.board[i][N - 1 - i] == self.board[0][N - 1])
+        {
             return Some(GameResult::Win(self.board[0][N - 1].unwrap()));
         }
 
@@ -209,23 +210,17 @@ pub struct NTTTEvaluator;
 impl<const N: usize> Evaluator<NTicTacToe<N>> for NTTTEvaluator {
     fn evaluate_for(&mut self, state: &NTTTState<N>, team: &Team) -> i32 {
         match state.game_result() {
-            Some(result) => {
-                match result {
-                    GameResult::Win(winner) => {
-                        if winner == *team {
-                            100
-                        } else {
-                            -100
-                        }
-                    }
-                    GameResult::Draw => {
-                        0
+            Some(result) => match result {
+                GameResult::Win(winner) => {
+                    if winner == *team {
+                        100
+                    } else {
+                        -100
                     }
                 }
-            }
-            None => {
-                0
-            }
+                GameResult::Draw => 0,
+            },
+            None => 0,
         }
     }
 }
