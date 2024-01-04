@@ -1,7 +1,6 @@
 pub mod agent;
 pub mod evaluator;
 pub mod functional_agent;
-//pub mod minimax;
 pub mod negamax;
 pub mod random_agent;
 pub mod simple_agent;

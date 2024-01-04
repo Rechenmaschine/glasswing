@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::ops::Index;
-use glasswing::agents::{Evaluator, SymmetricEvaluation};
+use glasswing::agents::{Evaluator};
 use glasswing::core::{Game, GameResult, GwAction, GwState, Team};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -229,7 +229,3 @@ impl<const N: usize> Evaluator<NTicTacToe<N>> for NTTTEvaluator {
         }
     }
 }
-
-
-// Yes, our evaluator is symmetric.
-impl<const N: usize> SymmetricEvaluation<NTicTacToe<N>> for NTTTEvaluator {}

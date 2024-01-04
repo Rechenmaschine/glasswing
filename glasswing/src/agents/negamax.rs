@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use crate::agents::{sort_actions, Evaluator, SymmetricEvaluation};
+use crate::agents::{sort_actions, Evaluator};
 use crate::core::{Game, GwState};
 use num_traits::Bounded;
 use std::marker::PhantomData;
@@ -9,7 +9,7 @@ pub struct NegaMax<G, E>
 where
     G: Game,
     G::EvalType: Ord + Bounded + Neg<Output=G::EvalType> + Copy,
-    E: Evaluator<G> + SymmetricEvaluation<G>,
+    E: Evaluator<G>,
 {
     depth: u32,
     evaluator: E,
@@ -20,7 +20,7 @@ impl<G, E> NegaMax<G, E>
     where
         G: Game,
         G::EvalType: Ord + Bounded + Neg<Output=G::EvalType> + Copy,
-        E: Evaluator<G> + SymmetricEvaluation<G>,
+        E: Evaluator<G>,
 {
     pub fn new(depth: u32, evaluator: E) -> Self {
         NegaMax {
@@ -29,22 +29,6 @@ impl<G, E> NegaMax<G, E>
             _game: PhantomData,
         }
     }
-
-    /*
-    function negamax(node, depth, α, β) is
-    if depth = 0 or node is a terminal node then
-        return evaluation of node
-
-    childNodes := generateMoves(node)
-    childNodes := orderMoves(childNodes)
-    value := −∞
-    foreach child in childNodes do
-        value := max(value, −negamax(child, depth − 1, −β, −α))
-        α := max(α, value)
-        if α ≥ β then
-            break (* cut-off *)
-    return value
-     */
 
     pub fn negamax(
         &mut self,
@@ -82,7 +66,7 @@ impl<G, E> Evaluator<G> for NegaMax<G, E>
     where
         G: Game,
         G::EvalType: Ord + Bounded + Neg<Output=G::EvalType> + Copy,
-        E: Evaluator<G> + SymmetricEvaluation<G>,
+        E: Evaluator<G>,
 {
     fn evaluate_for(&mut self, state: &G::State, for_team: &G::Team) -> G::EvalType {
         if state.team_to_move() == *for_team {
@@ -93,10 +77,3 @@ impl<G, E> Evaluator<G> for NegaMax<G, E>
         }
     }
 }
-
-impl<G, E> SymmetricEvaluation<G> for NegaMax<G, E>
-    where
-        G: Game,
-        G::EvalType: Ord + Bounded + Neg<Output=G::EvalType> + Copy + Debug,
-        E: Evaluator<G> + SymmetricEvaluation<G>,
-{}
