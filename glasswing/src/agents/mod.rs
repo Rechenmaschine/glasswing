@@ -5,6 +5,7 @@ pub mod minimax;
 pub mod negamax;
 pub mod random_agent;
 pub mod simple_agent;
+pub mod human_agent;
 
 pub use agent::*;
 pub use evaluator::*;
@@ -12,6 +13,7 @@ pub use minimax::MiniMax;
 pub use negamax::NegaMax;
 pub use random_agent::RandomAgent;
 pub use simple_agent::SimpleAgent;
+pub use human_agent::HumanAgent;
 
 use crate::core::Game;
 
