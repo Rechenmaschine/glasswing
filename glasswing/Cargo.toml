@@ -1,26 +1,16 @@
 [package]
 name = "glasswing"
-description = "Glasswing's core agents and traits"
 version = "0.1.0"
 edition = "2021"
-authors = ["Louis schell <louis.schell1@gmx.de>"]
 
 [dependencies]
+anyhow = "1.0.75"
+thiserror = "1.0.48"
+log = "0.4.20"
 rand = "0.8.5"
-serde = { version = "1.0.163", features = ["derive"], optional = true }
-serde_json = { version = "1.0.96", optional = true }
-anyhow = "1.0.71"
-thiserror = "1.0.40"
-log = "0.4.19"
-ordered-float = "3.7.0"
+num-traits = "0.2.17"
+itertools = "0.12.0"
 
 [dev-dependencies]
-pretty_env_logger = "0.5.0"
-
-[features]
-tournaments = []
-perft = []
-serde_support = ["serde", "serde_json"]
-
-[lib] # TODO remove once tests ok
-doctest = false
+glasswing_games = { path = "../glasswing_games" }
+ordered-float = "4.2.0"

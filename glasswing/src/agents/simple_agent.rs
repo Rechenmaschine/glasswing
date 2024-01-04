@@ -1,14 +1,17 @@
-use crate::core::traits::*;
+use crate::agents::Agent;
+use crate::core::state::*;
+use crate::core::{Game, MatchError};
 use anyhow::Error;
 use std::marker::PhantomData;
-use std::time::Duration;
 
 /// The simplest agent possible, which always recommends the first available action.
-pub struct SimpleAgent<G: Game> {
+#[derive(Default)]
+pub struct SimpleAgent<G> {
     _marker: PhantomData<G>,
 }
 
 impl<G: Game> SimpleAgent<G> {
+    #[inline]
     pub fn new() -> Self {
         SimpleAgent {
             _marker: PhantomData,
@@ -16,14 +19,9 @@ impl<G: Game> SimpleAgent<G> {
     }
 }
 
-impl<G: Game> Default for SimpleAgent<G> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<G: Game> Agent<G> for SimpleAgent<G> {
-    fn select_action(&mut self, state: &G::State, _: Duration) -> Result<G::Action, Error> {
+    #[inline]
+    fn select_action(&mut self, state: &G::State) -> Result<G::Action, Error> {
         state
             .actions()
             .into_iter()
