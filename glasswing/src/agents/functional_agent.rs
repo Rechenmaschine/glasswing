@@ -30,13 +30,3 @@ where
         (self.f)(state)
     }
 }
-
-impl<G, F> Agent<G> for F
-where
-    G: Game,
-    F: FnMut(&G::State) -> Result<G::Action, Error>,
-{
-    fn select_action(&mut self, state: &G::State) -> Result<G::Action, Error> {
-        (self)(state)
-    }
-}

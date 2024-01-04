@@ -1,5 +1,5 @@
-use crate::agents::Evaluator;
-use crate::core::{Game, GwState, GwTeam, MatchError, Polarity};
+use crate::agents::{Evaluator, sort_actions};
+use crate::core::{Game, GwState, MatchError};
 use anyhow::Error;
 use std::marker::PhantomData;
 
@@ -38,18 +38,11 @@ where
     G::EvalType: Ord + Copy,
 {
     fn select_action(&mut self, state: &G::State) -> Result<G::Action, Error> {
-        let action_scores = state.actions().into_iter().map(|action| {
-            let new_state = state.apply_action(&action);
-            let score = self.evaluator.evaluate(&new_state);
-            (action, score)
-        });
+        let mut actions = state.actions().into_iter().collect::<Vec<G::Action>>();
+        sort_actions(state, &mut actions, &mut self.evaluator, &state.team_to_move());
 
-        let best = match state.team_to_move().polarity() {
-            Polarity::Positive => action_scores.max_by_key(|(_, score)| *score),
-            Polarity::Negative => action_scores.min_by_key(|(_, score)| *score),
-        };
-
-        best.ok_or_else(|| MatchError::<G>::NoAvailableActions(state.clone()).into())
-            .map(|(action, _)| action)
+        actions.last()
+            .ok_or_else(|| MatchError::<G>::NoAvailableActions(state.clone()).into())
+            .cloned()
     }
 }

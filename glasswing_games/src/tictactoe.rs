@@ -1,21 +1,22 @@
 use std::fmt::{Display, Formatter};
 use glasswing::agents::Evaluator;
 use glasswing::core::Team::{One, Two};
-use glasswing::core::{Game, GameResult, GwAction, GwState, GwTeam, Team};
-use ordered_float::OrderedFloat;
+use glasswing::core::{Game, GameResult, GwAction, GwState, Team};
 
 pub struct TTTHeuristic;
 
 impl Evaluator<TicTacToe> for TTTHeuristic {
-    fn evaluate(&mut self, state: &TTTState) -> OrderedFloat<f32> {
+    fn evaluate_for(&mut self, state: &TTTState, team: &Team) -> i32 {
         match state.game_result() {
-            Some(GameResult::Win(team)) => {
-                return OrderedFloat(
-                    100.0 * <Team as GwTeam<TicTacToe>>::polarity(&team).sign() as f32,
-                );
+            Some(GameResult::Win(winner)) => {
+                if winner == *team {
+                    100
+                } else {
+                    -100
+                }
             }
-            Some(GameResult::Draw) => OrderedFloat(0.0),
-            None => OrderedFloat(0.0),
+            Some(GameResult::Draw) => 1,
+            None => 0,
         }
     }
 }
@@ -25,13 +26,13 @@ pub struct TTTAction {
     mask: u16,
 }
 
-impl Display for TTTAction{
+impl Display for TTTAction {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "TTTAction {{ pos: {} }}", self.mask.checked_ilog2().expect("Mask must have a single bit set"))
     }
 }
 
-impl<G: Game<Action = TTTAction>> GwAction<G> for TTTAction {}
+impl<G: Game<Action=TTTAction>> GwAction<G> for TTTAction {}
 
 #[derive(Clone, Debug)]
 pub struct TicTacToe;
@@ -41,7 +42,7 @@ impl Game for TicTacToe {
     type Action = TTTAction;
     type Team = Team;
     type GameResult = GameResult<TicTacToe>;
-    type EvalType = OrderedFloat<f32>;
+    type EvalType = i32;
 
     fn initial_state() -> Self::State {
         TTTState {
@@ -130,6 +131,7 @@ impl GwState<TicTacToe> for TTTState {
         }
     }
 }
+
 impl std::fmt::Display for TTTState {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let mut board_str = String::new();

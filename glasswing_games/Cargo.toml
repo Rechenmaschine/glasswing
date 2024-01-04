@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 glasswing = { path = "../glasswing" }
 ordered-float = "4.2.0"
+itertools = "0.12.0"
 
 [features]
 simd_support = []
