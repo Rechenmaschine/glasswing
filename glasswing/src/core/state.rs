@@ -8,11 +8,6 @@ where
 {
     type ActionIter: IntoIterator<Item = G::Action>;
 
-    #[inline]
-    fn is_legal(&self, action: &G::Action) -> bool {
-        self.actions().into_iter().any(|a| a == *action)
-    }
-
     fn actions(&self) -> Self::ActionIter;
 
     #[inline]
@@ -30,7 +25,10 @@ where
     #[must_use]
     fn apply_action(&self, action: &G::Action) -> Self;
 
-    fn is_terminal(&self) -> bool;
+    #[inline]
+    fn is_terminal(&self) -> bool{
+        self.game_result().is_some()
+    }
 
     fn game_result(&self) -> Option<G::GameResult>;
 }
