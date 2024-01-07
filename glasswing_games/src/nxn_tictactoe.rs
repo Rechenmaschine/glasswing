@@ -1,5 +1,5 @@
 use glasswing::agents::Evaluator;
-use glasswing::core::{Game, GameResult, GwAction, GwState, Team};
+use glasswing::core::{Game, GameResult, GwState, Team};
 use std::fmt::{Display, Formatter};
 use std::ops::Index;
 
@@ -10,7 +10,7 @@ impl<const N: usize> Game for NTicTacToe<N> {
     type State = NTTTState<N>;
     type Action = NTTTAction;
     type Team = Team;
-    type GameResult = GameResult<Self>;
+    type GameResult = GameResult<Self::Team>;
     type EvalType = i32;
 
     fn initial_state() -> Self::State {
@@ -18,10 +18,6 @@ impl<const N: usize> Game for NTicTacToe<N> {
             board: [[None; N]; N],
             player: Team::One,
         }
-    }
-
-    fn starting_team() -> Self::Team {
-        Team::One
     }
 }
 
@@ -42,8 +38,6 @@ impl Display for NTTTAction {
         write!(f, "Action {{ row: {}, col: {} }}", self.row, self.col)
     }
 }
-
-impl<const N: usize> GwAction<NTicTacToe<N>> for NTTTAction {}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NTTTState<const N: usize> {
@@ -120,7 +114,7 @@ impl<const N: usize> GwState<NTicTacToe<N>> for NTTTState<N> {
         self.game_result().is_some()
     }
 
-    fn game_result(&self) -> Option<GameResult<NTicTacToe<N>>> {
+    fn game_result(&self) -> Option<GameResult<Team>> {
         for &row in self.board.iter() {
             if row[0].is_some() && row.iter().all(|&cell| cell == row[0]) {
                 return Some(GameResult::Win(row[0].unwrap()));

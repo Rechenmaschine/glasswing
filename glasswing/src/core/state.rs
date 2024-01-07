@@ -1,11 +1,7 @@
 use crate::core::Game;
-use std::fmt::Debug;
+use std::fmt;
 
-pub trait GwState<G>
-where
-    Self: Sized + Clone + Debug + Send + Sync,
-    G: Game<State = Self>,
-{
+pub trait GwState<G: Game<State = Self>>: Sized + Clone + fmt::Debug + Send + Sync {
     type ActionIter: IntoIterator<Item = G::Action>;
 
     fn actions(&self) -> Self::ActionIter;
@@ -26,25 +22,19 @@ where
     fn apply_action(&self, action: &G::Action) -> Self;
 
     #[inline]
-    fn is_terminal(&self) -> bool{
+    fn is_terminal(&self) -> bool {
         self.game_result().is_some()
     }
 
     fn game_result(&self) -> Option<G::GameResult>;
 }
 
-pub struct SubStateIter<G>
-where
-    G: Game,
-{
+pub struct SubStateIter<G: Game> {
     actions: <<<G as Game>::State as GwState<G>>::ActionIter as IntoIterator>::IntoIter,
     state: G::State,
 }
 
-impl<G> SubStateIter<G>
-where
-    G: Game,
-{
+impl<G: Game> SubStateIter<G> {
     #[inline]
     fn new(state: G::State) -> Self {
         Self {
@@ -54,10 +44,7 @@ where
     }
 }
 
-impl<G> Iterator for SubStateIter<G>
-where
-    G: Game,
-{
+impl<G: Game> Iterator for SubStateIter<G> {
     type Item = G::State;
 
     #[inline]

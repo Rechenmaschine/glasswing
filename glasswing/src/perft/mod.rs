@@ -16,7 +16,8 @@ fn perft_recursive<G: Game>(state: &G::State, depth: u32) -> u64 {
         return state.count_actions() as u64;
     }
 
-    let count = state.substates()
+    let count = state
+        .substates()
         .into_iter()
         .map(|new_state| perft_recursive::<G>(&new_state, depth - 1))
         .sum::<u64>();

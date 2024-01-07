@@ -1,6 +1,7 @@
 use crate::agents::Evaluator;
 use crate::core::{Game, GwState, MatchError};
 use anyhow::Error;
+use std::fmt;
 use std::marker::PhantomData;
 
 pub trait Agent<G: Game> {
@@ -35,17 +36,22 @@ impl<G, E> Agent<G> for MaximisingAgent<G, E>
 where
     G: Game,
     E: Evaluator<G>,
-    G::EvalType: Ord + Copy + std::fmt::Debug,
+    G::Action: fmt::Debug,
+    G::EvalType: Ord + fmt::Debug + Clone,
 {
     fn select_action(&mut self, state: &G::State) -> Result<G::Action, Error> {
         let actions = state.actions().into_iter().collect::<Vec<G::Action>>();
 
-        let best = actions.iter().map(|x| {
-            let evaluation = self.evaluator.evaluate_action_for(state, x, &state.team_to_move());
-            println!("Considering Action {:?} with eval: {:?}", x, evaluation);
-            (x, evaluation)
-        })
-            .max_by_key(|(_, evaluation)| *evaluation);
+        let best = actions
+            .iter()
+            .map(|x| {
+                let evaluation =
+                    self.evaluator
+                        .evaluate_action_for(state, x, &state.team_to_move());
+                println!("Considering Action {:?} with eval: {:?}", x, evaluation);
+                (x, evaluation)
+            })
+            .max_by_key(|(_, evaluation)| evaluation.clone());
 
         if let Some((action, eval)) = best {
             println!("Selected {:?} / eval: {:?}", action, eval);

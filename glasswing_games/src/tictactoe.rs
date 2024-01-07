@@ -1,6 +1,6 @@
 use glasswing::agents::Evaluator;
 use glasswing::core::Team::{One, Two};
-use glasswing::core::{Game, GameResult, GwAction, GwState, Team};
+use glasswing::core::{Game, GameResult, GwState, Team};
 use std::fmt::{Display, Formatter};
 
 pub struct TTTHeuristic;
@@ -38,16 +38,14 @@ impl Display for TTTAction {
     }
 }
 
-impl<G: Game<Action = TTTAction>> GwAction<G> for TTTAction {}
-
 #[derive(Clone, Debug)]
 pub struct TicTacToe;
 
 impl Game for TicTacToe {
     type State = TTTState;
-    type Action = TTTAction;
     type Team = Team;
-    type GameResult = GameResult<TicTacToe>;
+    type GameResult = GameResult<Self::Team>;
+    type Action = TTTAction;
     type EvalType = i32;
 
     fn initial_state() -> Self::State {
@@ -57,10 +55,6 @@ impl Game for TicTacToe {
             player: One,
             is_terminal: false,
         }
-    }
-
-    fn starting_team() -> Self::Team {
-        One
     }
 }
 
@@ -125,7 +119,7 @@ impl GwState<TicTacToe> for TTTState {
     }
 
     #[inline]
-    fn game_result(&self) -> Option<GameResult<TicTacToe>> {
+    fn game_result(&self) -> Option<GameResult<Team>> {
         if win_condition(self.crosses) {
             Some(GameResult::Win(One))
         } else if win_condition(self.noughts) {

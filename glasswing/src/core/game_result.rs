@@ -1,33 +1,22 @@
-use crate::core::Game;
-use std::fmt::Debug;
+use crate::core::GwTeam;
+use std::fmt;
 
-pub trait GwGameResult<G: Game>
-where
-    Self: Sized + Clone + Debug,
-    G: Game<GameResult = Self>,
-{
-    fn winner(&self) -> Option<G::Team>;
+pub trait GwGameResult<T: GwTeam>: Sized + Clone + fmt::Debug {
+    fn winner(&self) -> Option<T>;
 
-    fn is_draw(&self) -> bool;
+    fn is_draw(&self) -> bool {
+        self.winner().is_none()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum GameResult<G: Game>
-where
-    G: Game,
-    G::Team: Debug,
-{
-    Win(G::Team),
+pub enum GameResult<T: GwTeam> {
+    Win(T),
     Draw,
 }
 
-impl<G> GwGameResult<G> for GameResult<G>
-where
-    Self: Sized + Clone + Debug,
-    G: Game<GameResult = Self>,
-{
-    #[inline]
-    fn winner(&self) -> Option<G::Team> {
+impl<T: GwTeam> GwGameResult<T> for GameResult<T> {
+    fn winner(&self) -> Option<T> {
         match self {
             GameResult::Win(team) => Some(team.clone()),
             GameResult::Draw => None,
@@ -43,15 +32,15 @@ where
     }
 }
 
-impl<G: Game<GameResult = GameResult<G>>> std::fmt::Display for GameResult<G>
-where
-    G: Game,
-    G::Team: std::fmt::Display,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl<T: GwTeam + fmt::Display> fmt::Display for GameResult<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            GameResult::Win(team) => write!(f, "Win({})", team),
-            GameResult::Draw => write!(f, "Draw"),
+            GameResult::Win(team) => {
+                write!(f, "{}", team)
+            }
+            GameResult::Draw => {
+                write!(f, "Draw")
+            }
         }
     }
 }

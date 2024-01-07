@@ -1,7 +1,7 @@
+use glasswing::agents::Evaluator;
+use glasswing::core::{Game, GameResult, GwState, Team};
 use std::fmt::Display;
 use std::ops::Index;
-use glasswing::agents::Evaluator;
-use glasswing::core::{Game, GameResult, GwAction, GwState, Team};
 
 #[derive(Debug, Clone)]
 pub struct Connect4;
@@ -10,7 +10,7 @@ impl Game for Connect4 {
     type State = C4State;
     type Action = C4Action;
     type Team = Team;
-    type GameResult = GameResult<Self>;
+    type GameResult = GameResult<Self::Team>;
     type EvalType = i32;
 
     fn initial_state() -> Self::State {
@@ -23,10 +23,6 @@ impl Game for Connect4 {
             player: Team::One,
             game_result: None,
         }
-    }
-
-    fn starting_team() -> Self::Team {
-        Team::One
     }
 }
 
@@ -44,13 +40,9 @@ impl Display for C4Action {
 #[allow(dead_code)]
 impl C4Action {
     pub fn new(column: u8) -> Self {
-        Self {
-            column,
-        }
+        Self { column }
     }
 }
-
-impl GwAction<Connect4> for C4Action {}
 
 #[derive(Copy, Clone, Debug)]
 pub struct Column {
@@ -86,7 +78,7 @@ impl Index<usize> for Column {
 pub struct C4State {
     board: [Column; 7],
     player: Team,
-    game_result: Option<GameResult<Connect4>>,
+    game_result: Option<GameResult<Team>>,
 }
 
 impl GwState<Connect4> for C4State {
@@ -101,7 +93,6 @@ impl GwState<Connect4> for C4State {
     fn team_to_move(&self) -> Team {
         self.player
     }
-
 
     /// assume that the action is valid, therefore this is not a terminal game state.
     #[inline]
@@ -123,8 +114,24 @@ impl GwState<Connect4> for C4State {
         new_col.height += 1;
 
         let proxy = match self.team_to_move() {
-            Team::One => { [new_board[0].one, new_board[1].one, new_board[2].one, new_board[3].one, new_board[4].one, new_board[5].one, new_board[6].one] }
-            Team::Two => { [new_board[0].two, new_board[1].two, new_board[2].two, new_board[3].two, new_board[4].two, new_board[5].two, new_board[6].two] }
+            Team::One => [
+                new_board[0].one,
+                new_board[1].one,
+                new_board[2].one,
+                new_board[3].one,
+                new_board[4].one,
+                new_board[5].one,
+                new_board[6].one,
+            ],
+            Team::Two => [
+                new_board[0].two,
+                new_board[1].two,
+                new_board[2].two,
+                new_board[3].two,
+                new_board[4].two,
+                new_board[5].two,
+                new_board[6].two,
+            ],
         };
 
         //// Step 2: check for win ////
@@ -138,7 +145,8 @@ impl GwState<Connect4> for C4State {
 
             if ((bits & mask) == mask)
                 || ((bits & mask << 1) == mask << 1)
-                || ((bits & mask << 2) == mask << 2) {
+                || ((bits & mask << 2) == mask << 2)
+            {
                 return C4State {
                     board: new_board,
                     player: self.team_to_move().opponent(),
@@ -153,7 +161,6 @@ impl GwState<Connect4> for C4State {
             bits |= (proxy[i] >> old_height) & 0x1;
             bits <<= 1;
         }
-
 
         // check whether mask matches
         let mut mask = 0b11110;
@@ -202,13 +209,13 @@ impl GwState<Connect4> for C4State {
     }
 
     #[inline]
-    fn game_result(&self) -> Option<GameResult<Connect4>> {
+    fn game_result(&self) -> Option<GameResult<Team>> {
         self.game_result.clone()
     }
 }
 
 impl C4State {
-    pub fn from_pretty(pretty: &str, game_result: Option<GameResult<Connect4>>) -> Self {
+    pub fn from_pretty(pretty: &str, game_result: Option<GameResult<Team>>) -> Self {
         let mut new_state = Self {
             board: [Column {
                 one: 0,
@@ -222,7 +229,7 @@ impl C4State {
         let pretty = pretty.replace(" ", "").replace("\n", "");
         for (i, c) in pretty.chars().enumerate() {
             let col = i % 7;
-            let row = 5-(i / 7);
+            let row = 5 - (i / 7);
             let tile = match c {
                 '🔘' => Tile::Empty,
                 '🔴' => Tile::Colour(Team::One),
@@ -273,7 +280,9 @@ impl C4State {
 
 #[inline]
 pub fn check_diagonals(board: &[u8; 7], x: u8, y: u8) -> bool {
-    let board = [0, board[6], board[5], board[4], board[3], board[2], board[1], board[0]];
+    let board = [
+        0, board[6], board[5], board[4], board[3], board[2], board[1], board[0],
+    ];
     let board = u64::from_be_bytes(board);
     return check_up_diagonal(board, x, y) || check_down_diagonal(board, x, y);
 }
@@ -379,11 +388,16 @@ impl C4ActionIter {
                 heights: [0; 7],
             };
         }
-        let heights = [state.board[0].height, state.board[1].height, state.board[2].height, state.board[3].height, state.board[4].height, state.board[5].height, state.board[6].height];
-        Self {
-            idx: 0,
-            heights,
-        }
+        let heights = [
+            state.board[0].height,
+            state.board[1].height,
+            state.board[2].height,
+            state.board[3].height,
+            state.board[4].height,
+            state.board[5].height,
+            state.board[6].height,
+        ];
+        Self { idx: 0, heights }
     }
 }
 
@@ -397,7 +411,9 @@ impl Iterator for C4ActionIter {
                 self.idx += 1;
                 continue;
             } else {
-                let action = C4Action { column: self.idx as u8 };
+                let action = C4Action {
+                    column: self.idx as u8,
+                };
                 self.idx += 1;
                 return Some(action);
             }
@@ -412,24 +428,18 @@ impl Evaluator<Connect4> for C4Heuristic {
     #[inline]
     fn evaluate_for(&mut self, state: &C4State, team: &Team) -> i32 {
         return match state.game_result {
-            Some(ref x) => {
-                match x {
-                    GameResult::Win(winner) => {
-                        let turn = state.board.iter().map(|x| x.height).sum::<u8>() as i32;
-                        if *winner == *team {
-                            1000 - turn
-                        } else {
-                            -1000 + turn
-                        }
-                    }
-                    GameResult::Draw => {
-                        0
+            Some(ref x) => match x {
+                GameResult::Win(winner) => {
+                    let turn = state.board.iter().map(|x| x.height).sum::<u8>() as i32;
+                    if *winner == *team {
+                        1000 - turn
+                    } else {
+                        -1000 + turn
                     }
                 }
-            }
-            None => {
-                0
-            }
+                GameResult::Draw => 0,
+            },
+            None => 0,
         };
     }
 }

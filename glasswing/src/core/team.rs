@@ -1,10 +1,6 @@
 use std::fmt;
-use crate::core::Game;
 
-pub trait GwTeam<G>: Sized + Clone + Eq + PartialEq + fmt::Debug
-    where
-        G: Game<Team=Self>,
-{
+pub trait GwTeam: Sized + Clone + Eq + PartialEq + fmt::Debug {
     fn opponent(&self) -> Self;
 
     #[inline]
@@ -27,15 +23,13 @@ impl Team {
     }
 }
 
-/// Team for a two player game.
-/// Why is this not an enum? Performance.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Team {
     One,
     Two,
 }
 
-impl<G: Game<Team=Self>> GwTeam<G> for Team {
+impl GwTeam for Team {
     #[inline]
     fn opponent(&self) -> Self {
         match self {

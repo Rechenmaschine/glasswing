@@ -1,17 +1,12 @@
-use super::{GwAction, GwGameResult, GwState, GwTeam};
+use super::{GwGameResult, GwState, GwTeam};
 use std::fmt::Debug;
 
-pub trait Game
-where
-    Self: Sized + Debug + 'static,
-{
+pub trait Game: Sized + Debug + 'static {
     type State: GwState<Self>;
-    type Action: GwAction<Self>;
-    type Team: GwTeam<Self>;
-    type GameResult: GwGameResult<Self>;
+    type Action: Clone + Debug;
+    type Team: GwTeam;
+    type GameResult: GwGameResult<Self::Team>;
     type EvalType;
 
     fn initial_state() -> Self::State;
-
-    fn starting_team() -> Self::Team;
 }
