@@ -3,6 +3,7 @@ use crate::core::{Game, GwState};
 use num_traits::Bounded;
 use std::marker::PhantomData;
 use std::ops::Neg;
+use smallvec::SmallVec;
 
 pub struct NegaMax<G, E>
 where
@@ -43,7 +44,7 @@ where
         }
 
         // Generate all legal actions from the current state and sort in ascending order of heuristic.
-        let mut actions = state.actions().into_iter().collect::<Vec<G::Action>>();
+        let mut actions = state.actions().into_iter().collect::<SmallVec<[G::Action; 8]>>();
         sort_actions(
             state,
             &mut actions,
