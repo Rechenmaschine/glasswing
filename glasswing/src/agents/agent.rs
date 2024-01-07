@@ -1,4 +1,4 @@
-use crate::agents::{sort_actions, Evaluator};
+use crate::agents::Evaluator;
 use crate::core::{Game, GwState, MatchError};
 use anyhow::Error;
 use std::marker::PhantomData;
@@ -35,20 +35,23 @@ impl<G, E> Agent<G> for MaximisingAgent<G, E>
 where
     G: Game,
     E: Evaluator<G>,
-    G::EvalType: Ord + Copy,
+    G::EvalType: Ord + Copy + std::fmt::Debug,
 {
     fn select_action(&mut self, state: &G::State) -> Result<G::Action, Error> {
-        let mut actions = state.actions().into_iter().collect::<Vec<G::Action>>();
-        sort_actions(
-            state,
-            &mut actions,
-            &mut self.evaluator,
-            &state.team_to_move(),
-        );
+        let actions = state.actions().into_iter().collect::<Vec<G::Action>>();
 
-        actions
-            .last()
-            .ok_or_else(|| MatchError::<G>::NoAvailableActions(state.clone()).into())
-            .cloned()
+        let best = actions.iter().map(|x| {
+            let evaluation = self.evaluator.evaluate_action_for(state, x, &state.team_to_move());
+            println!("Considering Action {:?} with eval: {:?}", x, evaluation);
+            (x, evaluation)
+        })
+            .max_by_key(|(_, evaluation)| *evaluation);
+
+        if let Some((action, eval)) = best {
+            println!("Selected {:?} / eval: {:?}", action, eval);
+            Ok(action.clone())
+        } else {
+            Err(MatchError::<G>::NoAvailableActions(state.clone()).into())
+        }
     }
 }
