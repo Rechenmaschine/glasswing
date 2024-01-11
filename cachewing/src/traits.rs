@@ -27,7 +27,8 @@ pub trait TranspositionHash<Target = u64> {
 ///
 /// [chessprogramming.org/Transposition_Table]: https://www.chessprogramming.org/Transposition_Table
 pub trait TranspositionTable<K, V, E = Entry64<K, V>>
-    where E: Entry<Key=K, Value=V>
+where
+    E: Entry<Key = K, Value = V>,
 {
     /// Looks up a key in the table, and returns an associated value if it exists.
     /// Note, that there is no guarantee that the returned value is the most recently
@@ -40,7 +41,9 @@ pub trait TranspositionTable<K, V, E = Entry64<K, V>>
     /// Under the premise of no hash collisions, this function always returns
     /// - `Some(&V)` if the associated key exists in the table
     /// - `None` if the key does not exist in the table
-    fn get<'a>(&'a self, k: &K) -> Option<&'a V> where E: 'a;
+    fn get<'a>(&'a self, k: &K) -> Option<&'a V>
+    where
+        E: 'a;
 
     /// Attempts to insert a key-value pair into the table.
     ///
@@ -64,10 +67,8 @@ pub trait TranspositionTable<K, V, E = Entry64<K, V>>
 /// in the entry type `E`.
 pub trait AlwaysReplacePolicy {}
 
-
 /// An entry in a TranspositionTable
 pub trait Entry {
-
     /// The key type of the entry, which will be used to look up the entry in the table.
     /// This type should hash to the `Self::RawKey` type.
     type Key: TranspositionHash<Self::RawKey>;
@@ -100,7 +101,6 @@ pub trait Entry {
     /// This is useful for moving the entry out of the table.
     fn take(self) -> (Self::RawKey, Self::Value);
 }
-
 
 pub struct Entry64<K, V> {
     key: u64,
@@ -153,25 +153,29 @@ impl<K: TranspositionHash, V> Entry for Entry64<K, V> {
     }
 }
 
-
 pub trait EntryBasedTranspositionTable<E: Entry> {
     fn get_entry(&self, k: &E::Key) -> Option<&E>;
     fn insert_entry(&mut self, k: E::Key, v: E::Value) -> Option<E>;
 }
 
-
 impl<Table, E, K, V> TranspositionTable<K, V, E> for Table
-    where Table: EntryBasedTranspositionTable<E>,
-          E: Entry<Key=K, Value=V>,
-          K: TranspositionHash<E::RawKey>,
+where
+    Table: EntryBasedTranspositionTable<E>,
+    E: Entry<Key = K, Value = V>,
+    K: TranspositionHash<E::RawKey>,
 {
     #[inline]
-    fn get<'a>(&'a self, k: &K) -> Option<&'a V> where E: 'a {
+    fn get<'a>(&'a self, k: &K) -> Option<&'a V>
+    where
+        E: 'a,
+    {
         Table::get_entry(self, k).map(|e| e.value())
     }
 
     #[inline]
     fn insert(&mut self, k: K, v: V) -> Option<V> {
-        Table::insert_entry(self, k, v).map(|e| e.take()).map(|(_, v)| v)
+        Table::insert_entry(self, k, v)
+            .map(|e| e.take())
+            .map(|(_, v)| v)
     }
 }

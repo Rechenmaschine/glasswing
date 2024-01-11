@@ -27,9 +27,10 @@ fn perft_recursive<G: Game>(state: &G::State, depth: u32) -> u64 {
 }
 
 pub fn perft_with_cache<G, T>(state: &G::State, depth: u32, table: &mut T) -> u64
-    where G: Game,
-          G::State: TranspositionHash,
-          T: TranspositionTable<G::State, u64> + AlwaysReplacePolicy,
+where
+    G: Game,
+    G::State: TranspositionHash,
+    T: TranspositionTable<G::State, u64> + AlwaysReplacePolicy,
 {
     if state.is_terminal() {
         return 1;
@@ -44,9 +45,7 @@ pub fn perft_with_cache<G, T>(state: &G::State, depth: u32, table: &mut T) -> u6
     let count = state
         .substates()
         .into_iter()
-        .map(|new_state| {
-            perft_with_cache::<G, T>(&new_state, depth - 1, table)
-        })
+        .map(|new_state| perft_with_cache::<G, T>(&new_state, depth - 1, table))
         .sum::<u64>();
 
     table.insert(state.clone(), count);

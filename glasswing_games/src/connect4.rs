@@ -444,39 +444,40 @@ impl Evaluator<Connect4> for C4Heuristic {
     }
 }
 
-use std::hash::{BuildHasher, Hasher};
 use ahash::RandomState;
+use std::hash::{BuildHasher, Hasher};
 
 /// randomly generated numbers
-const RANDOM_STATE: RandomState = RandomState::with_seeds(0x191ef7cbc3669467, 0x1f91f1e24a57bf4c, 0xaba0d8a295fce5de, 0x92b31779a806a6ba);
+const RANDOM_STATE: RandomState = RandomState::with_seeds(
+    0x191ef7cbc3669467,
+    0x1f91f1e24a57bf4c,
+    0xaba0d8a295fce5de,
+    0x92b31779a806a6ba,
+);
 
 impl cachewing::TranspositionHash for C4State {
     #[inline]
     fn hash(&self) -> u64 {
-        let board1 = u64::from_be_bytes(
-            [
-                self.board[0].one,
-                self.board[1].one,
-                self.board[2].one,
-                self.board[3].one,
-                self.board[4].one,
-                self.board[5].one,
-                self.board[6].one,
-                0,
-            ]
-        );
-        let board2 = u64::from_be_bytes(
-            [
-                self.board[0].two,
-                self.board[1].two,
-                self.board[2].two,
-                self.board[3].two,
-                self.board[4].two,
-                self.board[5].two,
-                self.board[6].two,
-                0,
-            ]
-        );
+        let board1 = u64::from_be_bytes([
+            self.board[0].one,
+            self.board[1].one,
+            self.board[2].one,
+            self.board[3].one,
+            self.board[4].one,
+            self.board[5].one,
+            self.board[6].one,
+            0,
+        ]);
+        let board2 = u64::from_be_bytes([
+            self.board[0].two,
+            self.board[1].two,
+            self.board[2].two,
+            self.board[3].two,
+            self.board[4].two,
+            self.board[5].two,
+            self.board[6].two,
+            0,
+        ]);
 
         let mut x = RANDOM_STATE.build_hasher();
         x.write_u64(board1);

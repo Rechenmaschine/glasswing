@@ -1,6 +1,6 @@
+use crate::traits::{AlwaysReplacePolicy, Entry, Entry64, TranspositionHash, TranspositionTable};
 use std::mem;
 use std::mem::MaybeUninit;
-use crate::traits::{AlwaysReplacePolicy, Entry, Entry64, TranspositionHash, TranspositionTable};
 
 const RETRIES: usize = 8;
 const C1: usize = 1;
@@ -15,11 +15,10 @@ pub struct QuadraticProbingTableBase<K, V, E> {
 }
 
 impl<K, V, E> QuadraticProbingTableBase<K, V, E>
-    where
-        K: TranspositionHash,
-        E: Entry<Key=K, Value=V, RawKey=u64>,
+where
+    K: TranspositionHash,
+    E: Entry<Key = K, Value = V, RawKey = u64>,
 {
-
     /// Creates a new table with the given number of slots.
     ///
     /// # Panics
@@ -29,7 +28,13 @@ impl<K, V, E> QuadraticProbingTableBase<K, V, E>
         #[cfg(feature = "nightly")]
         {
             let entries = Box::<[E]>::new_zeroed_slice(slots);
-            QuadraticProbingTableBase { entries, capacity: slots, size: 0, mask: slots - 1, _marker: Default::default() }
+            QuadraticProbingTableBase {
+                entries,
+                capacity: slots,
+                size: 0,
+                mask: slots - 1,
+                _marker: Default::default(),
+            }
         }
         #[cfg(not(feature = "nightly"))]
         {
@@ -38,17 +43,29 @@ impl<K, V, E> QuadraticProbingTableBase<K, V, E>
             // bytes therefore there is enough space to set the length to slots. Also, the memory is
             // zeroed, therefore no random data is read.
             unsafe {
-                std::ptr::write_bytes(vec.as_mut_ptr() as *mut u8, 0, slots * mem::size_of::<MaybeUninit<E>>());
+                std::ptr::write_bytes(
+                    vec.as_mut_ptr() as *mut u8,
+                    0,
+                    slots * mem::size_of::<MaybeUninit<E>>(),
+                );
                 vec.set_len(slots);
             }
             let entries = vec.into_boxed_slice();
-            QuadraticProbingTableBase { entries, capacity: slots, size: 0, mask: slots - 1, _marker: Default::default() }
+            QuadraticProbingTableBase {
+                entries,
+                capacity: slots,
+                size: 0,
+                mask: slots - 1,
+                _marker: Default::default(),
+            }
         }
     }
 
     fn get(&self, k: &K) -> Option<&V> {
         let hash = k.hash();
-        if hash == 0 { return None; } // 0 is reserved for empty entries
+        if hash == 0 {
+            return None;
+        } // 0 is reserved for empty entries
 
         let mut i = hash as usize & self.mask;
         let mut attempts = 0;
@@ -80,7 +97,9 @@ impl<K, V, E> QuadraticProbingTableBase<K, V, E>
 
     fn insert(&mut self, k: K, v: V) -> Option<V> {
         let hash = k.hash();
-        if hash == 0 { return None; } // 0 is reserved for empty entries
+        if hash == 0 {
+            return None;
+        } // 0 is reserved for empty entries
 
         let mut i = hash as usize & self.mask;
         let mut attempts = 0;
@@ -134,10 +153,14 @@ impl<K, V, E> QuadraticProbingTableBase<K, V, E>
 }
 
 impl<K, V, E> TranspositionTable<K, V> for QuadraticProbingTableBase<K, V, E>
-    where K: TranspositionHash,
-          E: Entry<Key=K, Value=V, RawKey=u64>
+where
+    K: TranspositionHash,
+    E: Entry<Key = K, Value = V, RawKey = u64>,
 {
-    fn get<'a>(&'a self, k: &K) -> Option<&'a V> where Entry64<K, V>: 'a {
+    fn get<'a>(&'a self, k: &K) -> Option<&'a V>
+    where
+        Entry64<K, V>: 'a,
+    {
         QuadraticProbingTableBase::get(self, k)
     }
 
@@ -146,4 +169,4 @@ impl<K, V, E> TranspositionTable<K, V> for QuadraticProbingTableBase<K, V, E>
     }
 }
 
-impl<K, V, E> AlwaysReplacePolicy for QuadraticProbingTableBase<K, V, E>{}
+impl<K, V, E> AlwaysReplacePolicy for QuadraticProbingTableBase<K, V, E> {}

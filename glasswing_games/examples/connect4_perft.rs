@@ -23,11 +23,15 @@ fn main() {
     let count1 = count_states::<Connect4, _>(&state, depth, &mut table);
     let elapsed = time.elapsed();
 
-    println!("Perft({}) = {}, or ~2^{:.2}", depth, count1, (count1 as f64).log2());
+    println!(
+        "Perft({}) = {}, or ~2^{:.2}",
+        depth,
+        count1,
+        (count1 as f64).log2()
+    );
     println!("Elapsed (Cache): {:?}", elapsed);
     println!("Table size: {}", table.size());
     println!("Load factor: {}", table.load_factor());
-
 
     // 1, 7, 49, 238, 1120, 4263, 16422, 54859, 184275, 558186, 1662623, 4568683,
     // 12236101, 30929111, 75437595, 176541259, 394591391, 858218743, 1763883894,
@@ -36,8 +40,13 @@ fn main() {
 }
 
 #[inline]
-fn count_states<G: Game, T: TranspositionTable<G::State, ()>>(current_state: &G::State, depth: usize, table: &mut T) -> usize
-    where G::State: TranspositionHash
+fn count_states<G: Game, T: TranspositionTable<G::State, ()>>(
+    current_state: &G::State,
+    depth: usize,
+    table: &mut T,
+) -> usize
+where
+    G::State: TranspositionHash,
 {
     if depth == 0 {
         return 1;
