@@ -3,7 +3,7 @@
 resolver = "2"
 
 members = [
-    "glasswing", "glasswing_games",
+    "glasswing", "glasswing_games", "cachewing",
 ]
 
 [profile.release]
