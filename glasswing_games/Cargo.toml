@@ -7,8 +7,10 @@ edition = "2021"
 
 [dependencies]
 glasswing = { path = "../glasswing" }
+cachewing = { path = "../cachewing" }
 ordered-float = "4.2.0"
 itertools = "0.12.0"
+ahash = { version = "0.8.7" }
 
 [features]
 simd_support = []
